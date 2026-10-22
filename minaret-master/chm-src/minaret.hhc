@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+	<param name="Window Styles" value="0x800025">
+</OBJECT>
+<UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="About Minaret">
+		<param name="Local" value="about.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="About Minaret">
+			<param name="Local" value="about.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Quick Start">
+		<param name="Local" value="quickStart.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Installing Minaret">
+			<param name="Local" value="quickStart.htm#install">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Running Minaret">
+			<param name="Local" value="quickStart.htm#run">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Setting Current Location">
+			<param name="Local" value="quickStart.htm#setCurLoc">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Setting Options">
+			<param name="Local" value="quickStart.htm#setOpt">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Getting Results">
+			<param name="Local" value="quickStart.htm#results">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The Location Menu">
+		<param name="Local" value="menuLoc.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Open Gazetteer">
+			<param name="Local" value="menuLoc.htm#openGzt">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Gazetteer Size">
+			<param name="Local" value="menuLoc.htm#gztSize">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Restore Factory-set Gazetteer">
+			<param name="Local" value="menuLoc.htm#restoreGzt">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The Prayer Hours Menu">
+		<param name="Local" value="menuPray.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Prayer Hours for a Day">
+			<param name="Local" value="menuPray.htm#hoursDay">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Prayer Schedule for a Hijri Month">
+			<param name="Local" value="menuPray.htm#schHijMonth">
+			<param name="URL" value="menuPray.htm#schHijMonth">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Prayer Schedule for a Month/Year">
+			<param name="Local" value="menuPray.htm#schMonth">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The Qibla Menu">
+		<param name="Local" value="menuQib.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Angle from North">
+			<param name="Local" value="menuQib.htm#qibAngle">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Shadow Diagram for a Day">
+			<param name="Local" value="menuQib.htm#diagDay">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Shadow Chart for a Month/Year">
+			<param name="Local" value="menuQib.htm#chartMonth">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Locations Near the Kaaba">
+			<param name="Local" value="menuQib.htm#qibKaaba">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The Calendar Menu">
+		<param name="Local" value="menuCal.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Date Conversion">
+			<param name="Local" value="menuCal.htm#dateConvert">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="New Moon Phase">
+			<param name="Local" value="menuCal.htm#newMoon">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Moon's Age">
+			<param name="Local" value="menuCal.htm#moonAge">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Note on the Crescent's Visibility">
+			<param name="Local" value="menuCal.htm#cresVisibility">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The Options menu">
+		<param name="Local" value="menuOpt.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Asr Time">
+			<param name="Local" value="menuOpt.htm#asr">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Fajr/Isha Determination Methods">
+			<param name="Local" value="menuOpt.htm#fajr">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="The File Menu">
+		<param name="Local" value="menuFile.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Save/Save As">
+			<param name="Local" value="menuFile.htm#save">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Print">
+			<param name="Local" value="menuFile.htm#print">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="References">
+		<param name="Local" value="ref.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="References">
+			<param name="Local" value="ref.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Any Comments?">
+			<param name="Local" value="ref.htm#anyComments">
+			</OBJECT>
+	</UL>
+</UL>
+</BODY></HTML>
