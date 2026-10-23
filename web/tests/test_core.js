@@ -97,6 +97,45 @@ console.log('sun-altitude checks:', altChecked);
   near(sunAlt(2026, 10, 22, r.asrMakruh, loc.tz, latDeg(loc), lonDeg(loc)), 4, 0.12, 'custom makruh alt');
 }
 
+// ---- 1b. several Fajr / Isha angles ---------------------------------------
+{
+  const loc = findLoc('Karachi'), noDst = Object.assign({}, loc, { dst: 0 });
+  const s3 = Object.assign({}, st, { fajrAngles: [15, 18, 16.5], ishaAngles: [15, 18] });
+  for (const [y, m, d] of dates) {
+    const r = M.daySchedule(d, m, y, noDst, s3).times, tag = `Karachi ${y}-${m}-${d} multi`;
+    ok(r.fajrs.length === 3 && r.ishas.length === 2, tag + ' list lengths');
+    [15, 18, 16.5].forEach((a, i) => near(sunAlt(y, m, d, r.fajrs[i], noDst.tz, latDeg(noDst), lonDeg(noDst)), -a, 0.12, `${tag} fajr${a}`));
+    [15, 18].forEach((a, i) => near(sunAlt(y, m, d, r.ishas[i], noDst.tz, latDeg(noDst), lonDeg(noDst)), -a, 0.12, `${tag} isha${a}`));
+    ok(r.fajrs[1] < r.fajrs[2] && r.fajrs[2] < r.fajrs[0], tag + ' fajr18 < fajr16.5 < fajr15');
+    ok(r.ishas[0] < r.ishas[1], tag + ' isha15 < isha18');
+    ok(r.fajr === r.fajrs[0] && r.isha === r.ishas[0], tag + ' first angle is primary');
+  }
+  // a single angle behaves exactly as before; legacy fajrDepr still works
+  const a = M.daySchedule(22, 10, 2026, loc, st).times;
+  const b = M.daySchedule(22, 10, 2026, loc, Object.assign({}, st, { fajrAngles: [15], ishaAngles: [15] })).times;
+  ok(a.fajr === b.fajr && a.isha === b.isha && a.fajrs.length === 1, 'single-angle list == legacy');
+  const c = M.daySchedule(22, 10, 2026, loc, Object.assign({}, st, { fajrDepr: 18, fajrAngles: undefined })).times;
+  const d18 = M.daySchedule(22, 10, 2026, loc, Object.assign({}, st, { fajrAngles: [18] })).times;
+  ok(c.fajr === d18.fajr, 'legacy fajrDepr=18 == fajrAngles [18]');
+  // interval method ignores the angle lists and yields one column
+  const iv = M.daySchedule(22, 10, 2026, loc, Object.assign({}, st, { fajrByDepr: 0, fajrInterval: 90, ishaByDepr: 0, ishaInterval: 90, fajrAngles: [15, 18], ishaAngles: [15, 18] })).times;
+  ok(iv.fajrs.length === 1 && iv.ishas.length === 1, 'interval method has one column each');
+  near(iv.shuruq - iv.fajr, 1.5, 1e-9, 'fajr interval 90 min');
+  near(iv.isha - iv.maghrib, 1.5, 1e-9, 'isha interval 90 min');
+  // DST shifts every listed angle by one hour
+  const dc = findLoc('Washington'), nd = Object.assign({}, dc, { dst: 0 });
+  const w = M.daySchedule(1, 7, 2024, dc, s3).times, w0 = M.daySchedule(1, 7, 2024, nd, s3).times;
+  w.fajrs.forEach((v, i) => near(v - w0.fajrs[i], 1, 1e-9, 'DST fajr list ' + i));
+  w.ishas.forEach((v, i) => near(v - w0.ishas[i], 1, 1e-9, 'DST isha list ' + i));
+  // month, year and Hijri-month tables carry the lists
+  ok(M.monthSchedule(3, 2026, loc, s3).rows[4].fajrs.length === 3, 'month rows carry fajrs');
+  ok(M.yearSchedule(0, loc, s3)[5].rows[9].ishas.length === 2, 'perpetual rows carry ishas');
+  ok(M.hijriMonthSchedule(9, 1448, loc, s3).rows[3].fajrs.length === 3, 'hijri rows carry fajrs');
+  // day vs month table agree for each angle
+  const dd = M.daySchedule(14, 3, 2026, loc, s3).times, mm = M.monthSchedule(3, 2026, loc, s3).rows[13];
+  dd.fajrs.forEach((v, i) => near(v, mm.fajrs[i], 0.01, 'day vs month fajr list ' + i));
+}
+
 // ---- 2. schedules ----------------------------------------------------------
 {
   const loc = findLoc('Karachi');

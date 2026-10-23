@@ -199,22 +199,40 @@
   var TIME_KEYS = ['fajr', 'shuruq', 'ishraq', 'zuhr', 'asr', 'asrMakruh', 'maghrib', 'isha'];
 
   /**
+   * The Fajr or Isha depression angles (degrees) chosen in the settings.
+   * `which` is 'fajr' or 'isha'.  st.fajrAngles / st.ishaAngles may hold several
+   * angles (e.g. [15, 18]); otherwise the single st.fajrDepr / st.ishaDepr is used.
+   */
+  function angleList(st, which) {
+    var a = st[which + 'Angles'];
+    if (!Array.isArray(a) || !a.length) a = [st[which + 'Depr']];
+    return a.map(Number);
+  }
+
+  /**
    * Compute the times for days first..last-1 (0-based day numbers of the year).
    * Returns an array indexed by day number of objects with the keys in TIME_KEYS.
+   * row.fajrs / row.ishas hold one time per chosen angle (a single entry when the
+   * interval method is used); row.fajr / row.isha are the first of these.
    * Daylight saving time is applied from `dstInfo` (as returned by daylit()).
    */
   function compute(aYear, first, last, loc, st, dstInfo) {
     var y = aYear === 0 ? YEARPERP : aYear;
     var C = computeConstants(y);
-    var am = true, pm = false, t, l, k;
-    var t0 = { fajr: 4, shuruq: 6, asr: 15, maghrib: 18, isha: 20, ishraq: 6.5, makruh: 17.5 };
+    var am = true, pm = false, t, l, k, i;
+    var fa = st.fajrByDepr ? angleList(st, 'fajr') : [];
+    var ia = st.ishaByDepr ? angleList(st, 'isha') : [];
+    var t0 = {
+      shuruq: 6, asr: 15, maghrib: 18, ishraq: 6.5, makruh: 17.5,
+      fajrs: fa.map(function () { return 4; }), ishas: ia.map(function () { return 20; })
+    };
     var coalt = {
-      fajr: deg2rad(90 + st.fajrDepr),
       shuruq: deg2rad(90.83),
       maghrib: deg2rad(90.83),
-      isha: deg2rad(90 + st.ishaDepr),
       ishraq: deg2rad(90 - st.ishraqAlt),
-      makruh: deg2rad(90 - st.asrMakruhAlt)
+      makruh: deg2rad(90 - st.asrMakruhAlt),
+      fajrs: fa.map(function (a) { return deg2rad(90 + a); }),
+      ishas: ia.map(function (a) { return deg2rad(90 + a); })
     };
     var n = noontime(C, loc, first);
     coalt.asr = Math.atan(1 + st.asrHanafi + Math.tan(n.coaltn));
@@ -227,15 +245,13 @@
     t0.maghrib = keep(tempus(C, loc, first, coalt.maghrib, t0.maghrib, pm), 21);
     t0.ishraq = keep(tempus(C, loc, first, coalt.ishraq, t0.ishraq, am), 6.5);
     t0.makruh = keep(tempus(C, loc, first, coalt.makruh, t0.makruh, pm), 17.5);
-    if (st.fajrByDepr) t0.fajr = keep(tempus(C, loc, first, coalt.fajr, t0.fajr, am), 1);
-    else t0.fajr = t0.shuruq - st.fajrInterval / 60;
-    if (st.ishaByDepr) t0.isha = keep(tempus(C, loc, first, coalt.isha, t0.isha, pm), 23);
-    else t0.isha = t0.maghrib + st.ishaInterval / 60;
+    for (i = 0; i < fa.length; i++) t0.fajrs[i] = keep(tempus(C, loc, first, coalt.fajrs[i], t0.fajrs[i], am), 1);
+    for (i = 0; i < ia.length; i++) t0.ishas[i] = keep(tempus(C, loc, first, coalt.ishas[i], t0.ishas[i], pm), 23);
 
     var out = [];
     for (l = first; l < last; l++) {
       k = (l > 59 && aYear === 0) ? l - 1 : l;     // Feb 29 and Mar 1 share times
-      var row = {};
+      var row = { fajrs: [], ishas: [] };
       n = noontime(C, loc, k + 1);
       row.zuhr = n.time;
       coalt.asr = Math.atan(1 + st.asrHanafi + Math.tan(n.coaltn));
@@ -249,25 +265,40 @@
       t = tempus(C, loc, k + 1, coalt.ishraq, t0.ishraq, am);
       row.ishraq = t; t0.ishraq = keep(t, 6.5);
       t = tempus(C, loc, k + 1, coalt.makruh, t0.makruh, pm);
-      row.asrMakruh = t; t0.asrMakruh = t0.makruh = keep(t, 17.5);
+      row.asrMakruh = t; t0.makruh = keep(t, 17.5);
 
       if (st.fajrByDepr) {
-        t = tempus(C, loc, k + 1, coalt.fajr, t0.fajr, am);
-        row.fajr = t; t0.fajr = keep(t, 1);
+        for (i = 0; i < fa.length; i++) {
+          t = tempus(C, loc, k + 1, coalt.fajrs[i], t0.fajrs[i], am);
+          row.fajrs.push(t); t0.fajrs[i] = keep(t, 1);
+        }
       } else {
-        t0.fajr = t0.shuruq - st.fajrInterval / 60;
-        row.fajr = t0.fajr;
+        row.fajrs.push(t0.shuruq - st.fajrInterval / 60);
       }
       if (st.ishaByDepr) {
-        t = tempus(C, loc, k + 1, coalt.isha, t0.isha, pm);
-        row.isha = t; t0.isha = keep(t, 23);
+        for (i = 0; i < ia.length; i++) {
+          t = tempus(C, loc, k + 1, coalt.ishas[i], t0.ishas[i], pm);
+          row.ishas.push(t); t0.ishas[i] = keep(t, 23);
+        }
       } else {
-        t0.isha = t0.maghrib + st.ishaInterval / 60;
-        row.isha = t0.isha;
+        row.ishas.push(t0.maghrib + st.ishaInterval / 60);
       }
+      row.fajr = row.fajrs[0];
+      row.isha = row.ishas[0];
       out[l] = row;
     }
     applyDST(out, dstInfo, TIME_KEYS);
+    // applyDST moved the scalar keys; move the per-angle lists the same way
+    var d = dstInfo;
+    function addList(b, e) {
+      for (var j = b - 1; j <= e - 1; j++) {
+        if (!out[j]) continue;
+        out[j].fajrs = out[j].fajrs.map(function (v) { return v + 1; });
+        out[j].ishas = out[j].ishas.map(function (v) { return v + 1; });
+      }
+    }
+    if (d.e1 !== 0) addList(d.b1, d.e1);
+    if (d.e2 !== 0) addList(d.b2, d.e2);
     return out;
   }
 
@@ -649,7 +680,7 @@
     isLeap: isLeap, monthLength: monthLength,
     computeConstants: computeConstants, tempus: tempus, noontime: noontime,
     daylit: daylit, namedDay: namedDay,
-    compute: compute, daySchedule: daySchedule, monthSchedule: monthSchedule,
+    angleList: angleList, compute: compute, daySchedule: daySchedule, monthSchedule: monthSchedule,
     yearSchedule: yearSchedule, hijriMonthSchedule: hijriMonthSchedule,
     qibla: qibla, qiblaAngle: qiblaAngle, qiblaDay: qiblaDay,
     qiblaMonth: qiblaMonth, qiblaYear: qiblaYear,

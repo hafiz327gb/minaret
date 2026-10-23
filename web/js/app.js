@@ -23,6 +23,14 @@
     ishaByDepr: GAZ.defaults.ishaByDepr, ishaDepr: GAZ.defaults.ishaDepr, ishaInterval: GAZ.defaults.ishaInterval,
     use24: 0
   }, load('settings', {}));
+  function ensureAngles(s) {
+    ['fajr', 'isha'].forEach(function (w) {
+      var a = s[w + 'Angles'];
+      if (!Array.isArray(a) || !a.length || a.some(function (v) { return !(v >= 6 && v <= 24); })) a = [s[w + 'Depr']];
+      s[w + 'Angles'] = a; s[w + 'Depr'] = a[0];
+    });
+  }
+  ensureAngles(settings);
   var loc;
   var now = new Date();
   var today = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
@@ -80,25 +88,40 @@
 
   // ====================================================== PRAYER TAB
   var pMode = 'day';
-  var COLS = [
-    ['fajr', 'Fajr', 'فجر'], ['shuruq', 'Shuruq', 'طلوع'], ['ishraq', 'Ishraq', 'اشراق'], ['zuhr', 'Zuhr', 'ظہر'],
-    ['asr', 'Asr', 'عصر'], ['asrMakruh', 'Asr Makruh', 'عصر مکروہ'], ['maghrib', 'Maghrib', 'مغرب'], ['isha', 'Isha', 'عشاء']
-  ];
-  var EXTRA = { ishraq: 1, asrMakruh: 1 };
-  var SUB = { fajr: 'Dawn', shuruq: 'Sunrise', zuhr: 'Noon', asr: 'Afternoon', asrMakruh: '', maghrib: 'Sunset', isha: 'Night' };
+  /** The table columns for the current settings (several Fajr/Isha angles -> several columns). */
+  function columns() {
+    var st = settings, cols = [];
+    function angleCols(which, en, ur, sub) {
+      var list = st[which + 'ByDepr'] ? M.angleList(st, which) : [null], multi = list.length > 1;
+      list.forEach(function (a, i) {
+        cols.push({
+          id: which + i, en: en + (multi ? a : ''), ur: ur, sub: sub + (multi ? ' · ' + a + '°' : ''),
+          get: function (r) { return r[which === 'fajr' ? 'fajrs' : 'ishas'][i]; }
+        });
+      });
+    }
+    function one(key, en, ur, sub, extra) { cols.push({ id: key, en: en, ur: ur, sub: sub, extra: extra, get: function (r) { return r[key]; } }); }
+    angleCols('fajr', 'Fajr', 'فجر', 'Dawn');
+    one('shuruq', 'Shuruq', 'طلوع', 'Sunrise');
+    one('ishraq', 'Ishraq', 'اشراق', '+' + st.ishraqAlt + '°', 1);
+    one('zuhr', 'Zuhr', 'ظہر', 'Noon');
+    one('asr', 'Asr', 'عصر', 'Afternoon');
+    one('asrMakruh', 'Asr Makruh', 'عصر مکروہ', '+' + st.asrMakruhAlt + '°', 1);
+    one('maghrib', 'Maghrib', 'مغرب', 'Sunset');
+    angleCols('isha', 'Isha', 'عشاء', 'Night');
+    return cols;
+  }
 
   function colHead(c) {
-    var sub = SUB[c[0]];
-    if (c[0] === 'ishraq') sub = '+' + settings.ishraqAlt + '°';
-    if (c[0] === 'asrMakruh') sub = '+' + settings.asrMakruhAlt + '°';
-    return '<th class="' + (EXTRA[c[0]] ? 'xt' : '') + '">' + c[1] + '<small><bdi>' + c[2] + '</bdi>' + (sub ? ' · <bdi>' + sub + '</bdi>' : '') + '</small></th>';
+    return '<th class="' + (c.extra ? 'xt' : '') + '">' + c.en + '<small><bdi>' + c.ur + '</bdi> · <bdi>' + c.sub + '</bdi></small></th>';
   }
 
   function scheduleTable(rows, o) {
     var h = '<div class="tblwrap' + (o.pageBreak ? ' month-break' : '') + '"><table class="sch"><caption>' + esc(o.caption) + '</caption><thead><tr>';
     h += '<th>' + (o.firstHead || 'Date') + '</th>';
     if (o.second) h += '<th>' + o.second + '</th>';
-    COLS.forEach(function (c) { h += colHead(c); });
+    var cols = columns();
+    cols.forEach(function (c) { h += colHead(c); });
     if (o.qibla) h += '<th>Shadow<small>to Qibla</small></th>';
     h += '</tr></thead><tbody>';
     rows.forEach(function (r) {
@@ -108,7 +131,7 @@
       h += '<tr' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>';
       h += '<td>' + r.day + (r.dow ? ' <span class="dn">' + dayName(r.dow).slice(0, 3) + '</span>' : '') + '</td>';
       if (o.second) h += '<td>' + (o.hijri ? (r.hijri || '') : (r.greg || '')) + '</td>';
-      COLS.forEach(function (c) { h += '<td class="' + (EXTRA[c[0]] ? 'xt' : '') + '">' + T(r[c[0]]) + '</td>'; });
+      cols.forEach(function (c) { h += '<td class="' + (c.extra ? 'xt' : '') + '">' + T(c.get(r)) + '</td>'; });
       if (o.qibla) h += '<td>' + (r.qibla === undefined ? '' : (settings.use24 ? M.formatTime24(r.qibla) : T12(r.qibla))) + '</td>';
       h += '</tr>';
     });
@@ -129,10 +152,12 @@
       var r = M.daySchedule(d.d, d.m, d.y, loc, st), h = M.X2H(d.y, d.m, d.d, loc.tz);
       html = '<div class="head"><h2>' + dayName(r.dow) + ', ' + d.d + ' ' + M.MONTH[d.m - 1] + ' ' + d.y +
         ' · ' + h.day + ' ' + M.HIJRI_MONTH[h.month - 1] + ' ' + h.year + ' H</h2><p class="meta">' + locMeta(loc) + '</p></div><div class="daycards">';
-      COLS.forEach(function (c) {
-        var note = { ishraq: 'sun ' + st.ishraqAlt + '° above horizon', asrMakruh: 'sun ' + st.asrMakruhAlt + '° above horizon · till Maghrib' }[c[0]] || SUB[c[0]];
-        html += '<div class="dc' + (EXTRA[c[0]] ? ' xt' : '') + '"><div class="n"><span>' + c[1] + '</span><span class="ur">' + c[2] + '</span></div>' +
-          '<div class="t">' + (settings.use24 ? M.formatTime24(r.times[c[0]]) : T12(r.times[c[0]])) + '</div><div class="d">' + note + '</div></div>';
+      columns().forEach(function (c) {
+        var note = c.id === 'ishraq' ? 'sun ' + st.ishraqAlt + '° above horizon'
+          : c.id === 'asrMakruh' ? 'sun ' + st.asrMakruhAlt + '° above horizon · till Maghrib' : c.sub;
+        var v = c.get(r.times);
+        html += '<div class="dc' + (c.extra ? ' xt' : '') + '"><div class="n"><span>' + c.en + '</span><span class="ur">' + c.ur + '</span></div>' +
+          '<div class="t">' + (settings.use24 ? M.formatTime24(v) : T12(v)) + '</div><div class="d">' + note + '</div></div>';
       });
       html += '</div>';
       if (loc.dst) html += '<p class="note">Daylight saving time is applied for dates inside the DST period of this location.</p>';
@@ -383,10 +408,22 @@
     document.querySelector('input[name=fajrBy][value="' + (s.fajrByDepr ? 1 : 0) + '"]').checked = true;
     document.querySelector('input[name=ishaBy][value="' + (s.ishaByDepr ? 1 : 0) + '"]').checked = true;
     document.querySelector('input[name=asrBy][value="' + (s.asrHanafi ? 1 : 0) + '"]').checked = true;
-    $('oFajrDepr').value = s.fajrDepr; $('oFajrInt').value = s.fajrInterval;
-    $('oIshaDepr').value = s.ishaDepr; $('oIshaInt').value = s.ishaInterval;
+    $('oFajrDepr').value = s.fajrAngles.join(', '); $('oFajrInt').value = s.fajrInterval;
+    $('oIshaDepr').value = s.ishaAngles.join(', '); $('oIshaInt').value = s.ishaInterval;
     $('oIshraq').value = s.ishraqAlt; $('oMakruh').value = s.asrMakruhAlt;
     $('oHijri').checked = !!s.addHijriDate; $('oQibla').checked = !!s.addQiblaTime; $('o24').checked = !!s.use24;
+  }
+  /** "15, 18" -> [15, 18]; null if empty, malformed, out of 6..24, or more than 4 values. */
+  function parseAngles(text) {
+    var parts = String(text).replace(/[،;]/g, ',').split(/[,\s]+/).filter(Boolean), out = [];
+    if (!parts.length || parts.length > 4) return null;
+    for (var i = 0; i < parts.length; i++) {
+      var v = Number(parts[i]);
+      if (!isFinite(v) || v < 6 || v > 24) return null;
+      v = Math.round(v * 100) / 100;
+      if (out.indexOf(v) < 0) out.push(v);
+    }
+    return out;
   }
   function num(id, lo, hi, def) { var v = +$(id).value; return (isFinite(v) && v >= lo && v <= hi) ? v : def; }
   $('optForm').addEventListener('submit', function (e) {
@@ -395,14 +432,23 @@
     s.fajrByDepr = +document.querySelector('input[name=fajrBy]:checked').value;
     s.ishaByDepr = +document.querySelector('input[name=ishaBy]:checked').value;
     s.asrHanafi = +document.querySelector('input[name=asrBy]:checked').value;
-    s.fajrDepr = Math.round(num('oFajrDepr', 6, 24, s.fajrDepr)); s.fajrInterval = Math.round(num('oFajrInt', 20, 120, s.fajrInterval));
-    s.ishaDepr = Math.round(num('oIshaDepr', 6, 24, s.ishaDepr)); s.ishaInterval = Math.round(num('oIshaInt', 20, 120, s.ishaInterval));
+    var fa = parseAngles($('oFajrDepr').value), ia = parseAngles($('oIshaDepr').value), err = $('optErr');
+    if (!fa || !ia) {
+      err.textContent = 'Angles must be numbers between 6 and 24, separated by commas (at most 4), e.g. 15, 18.';
+      (!fa ? $('oFajrDepr') : $('oIshaDepr')).focus();
+      return;
+    }
+    err.textContent = '';
+    s.fajrAngles = fa; s.ishaAngles = ia; ensureAngles(s);
+    s.fajrInterval = Math.round(num('oFajrInt', 20, 120, s.fajrInterval));
+    s.ishaInterval = Math.round(num('oIshaInt', 20, 120, s.ishaInterval));
     s.ishraqAlt = num('oIshraq', 0.1, 10, 1.4); s.asrMakruhAlt = num('oMakruh', 0.1, 10, 2.3);
     s.addHijriDate = $('oHijri').checked ? 1 : 0; s.addQiblaTime = $('oQibla').checked ? 1 : 0; s.use24 = $('o24').checked ? 1 : 0;
     save('settings', s); fillOptions(); renderCurrent(); showTab('prayer');
   });
   $('oReset').addEventListener('click', function () {
-    settings = Object.assign(M.defaultSettings(), { use24: 0 }); save('settings', settings); fillOptions(); renderCurrent();
+    settings = Object.assign(M.defaultSettings(), { use24: 0 }); ensureAngles(settings); save('settings', settings);
+    $('optErr').textContent = ''; fillOptions(); renderCurrent();
   });
 
   // ============================================================== init

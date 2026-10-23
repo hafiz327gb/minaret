@@ -10,6 +10,7 @@ carries the same additions.
 * **Asr Makruh** – when, before sunset, the sun's centre is still **2.3°** above the horizon (lasts till Maghrib).
 
 Both appear in the Prayer tables (day, month, year, perpetual and Hijri-month) and can be tuned in *Options*.
+* **Several Fajr / Isha angles** – in *Options* enter e.g. `15, 18`; every table then gets its own columns (Fajr15, Fajr18, Isha15, Isha18).
 
 ## Run it
 Open `index.html` in a browser, or serve the folder:

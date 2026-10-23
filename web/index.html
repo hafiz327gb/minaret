@@ -177,14 +177,16 @@
     <article class="card">
       <h2>Fajr <span class="ur">فجر</span></h2>
       <label class="chk"><input type="radio" name="fajrBy" value="1"> By sun's depression below horizon</label>
-      <label class="ind">Degrees <input id="oFajrDepr" type="number" min="6" max="24" step="1"></label>
+      <label class="ind">Angle(s) in degrees <input id="oFajrDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18" autocomplete="off"></label>
+      <p class="hint ind">Give one angle, or several separated by commas (e.g. <b>15, 18</b>). Each angle gets its own column, labelled Fajr15, Fajr18…</p>
       <label class="chk"><input type="radio" name="fajrBy" value="0"> By fixed interval before sunrise</label>
       <label class="ind">Minutes <input id="oFajrInt" type="number" min="20" max="120" step="1"></label>
     </article>
     <article class="card">
       <h2>Isha <span class="ur">عشاء</span></h2>
       <label class="chk"><input type="radio" name="ishaBy" value="1"> By sun's depression below horizon</label>
-      <label class="ind">Degrees <input id="oIshaDepr" type="number" min="6" max="24" step="1"></label>
+      <label class="ind">Angle(s) in degrees <input id="oIshaDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18" autocomplete="off"></label>
+      <p class="hint ind">One angle, or several separated by commas (e.g. <b>15, 18</b>) – columns Isha15, Isha18…</p>
       <label class="chk"><input type="radio" name="ishaBy" value="0"> By fixed interval after sunset</label>
       <label class="ind">Minutes <input id="oIshaInt" type="number" min="20" max="120" step="1"></label>
     </article>
@@ -207,6 +209,7 @@
       <label class="chk"><input id="oQibla" type="checkbox"> Time when shadow points to Qibla</label>
       <label class="chk"><input id="o24" type="checkbox"> 24-hour clock</label>
     </article>
+    <p id="optErr" class="err wide" role="alert"></p>
     <div class="btns wide"><button class="primary" type="submit">Save</button><button type="button" id="oReset">Reset to defaults</button></div>
   </form>
 </section>
@@ -220,7 +223,7 @@
     Visual Basic source (kept in this repository under <code>minaret-master/vb6-src</code>).</p>
     <h3>Times shown</h3>
     <ul>
-      <li><b>Fajr</b> – dawn: sun is below the horizon by the chosen angle (or fixed minutes before sunrise).</li>
+      <li><b>Fajr</b> – dawn: sun is below the horizon by the chosen angle (or fixed minutes before sunrise). In Options you may enter several angles (say 15 and 18); the tables then show <b>Fajr15</b> and <b>Fajr18</b> columns. The same works for <b>Isha</b>.</li>
       <li><b>Shuruq</b> – sunrise (sun's centre 0.83° below the horizon).</li>
       <li><b>Ishraq</b> – begins when the sun has risen <b>1.4°</b> above the horizon after sunrise (adjustable in Options).</li>
       <li><b>Zuhr</b> – solar noon.</li>
