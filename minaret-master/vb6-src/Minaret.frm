@@ -408,6 +408,9 @@ Private Sub mnuPraDay_Click()
     For i = 0 To 5
         frmDay.lblTime(i).Caption = TimeTo12hr(tim(nday, i), 0)
     Next i
+    ' ishraq and asr makruh (tim columns 8 and 9)
+    frmDay.lblTime(6).Caption = TimeTo12hr(tim(nday, 8), 0)
+    frmDay.lblTime(7).Caption = TimeTo12hr(tim(nday, 9), 0)
     frmDay.lblDOW.Caption = weekdayName(dayOfWeek)
     frmDay.lblLoc = pname
     frmDay.Show

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f5c4d">
+<title>Minaret – Prayer Times, Qibla &amp; Hijri Calendar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M12 1c.6 1.6 1.6 2.6 2.6 3.4-.9.7-1.6 1.8-1.6 3.1V9h-2V7.5c0-1.3-.7-2.4-1.6-3.1C10.4 3.600 11.400 2.600 12 1zM9 10h6l1 3v9H8v-9l1-3zm3 3a1.500 1.500 0 0 0-1.500 1.500V22h3v-7.500A1.500 1.500 0 0 0 12 13z"/></svg>
+    <div><h1>Minaret</h1><p class="sub" id="locLabel">—</p></div>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button role="tab" data-tab="prayer" class="on">Prayer <span class="ur">نماز</span></button>
+    <button role="tab" data-tab="qibla">Qibla <span class="ur">قبلہ</span></button>
+    <button role="tab" data-tab="calendar">Calendar <span class="ur">کیلنڈر</span></button>
+    <button role="tab" data-tab="location">Location <span class="ur">مقام</span></button>
+    <button role="tab" data-tab="options">Options <span class="ur">ترتیبات</span></button>
+    <button role="tab" data-tab="help">Help <span class="ur">مدد</span></button>
+  </nav>
+</header>
+
+<main>
+<!-- ======================================================== PRAYER -->
+<section id="tab-prayer" class="panel on">
+  <div class="modes" id="prayerModes">
+    <button data-mode="day" class="on">Day</button>
+    <button data-mode="month">Month</button>
+    <button data-mode="year">Year</button>
+    <button data-mode="hijri">Hijri month</button>
+  </div>
+
+  <form id="prayerForm" class="controls" autocomplete="off">
+    <label data-for="day">Date
+      <input type="date" id="pDate" required>
+    </label>
+    <label data-for="month year">Month
+      <select id="pMonth"></select>
+    </label>
+    <label data-for="month year">Year <small id="yearHint"></small>
+      <input type="number" id="pYear" min="0" max="2200" step="1">
+    </label>
+    <label data-for="hijri">Hijri month
+      <select id="pHMonth"></select>
+    </label>
+    <label data-for="hijri">Hijri year
+      <input type="number" id="pHYear" min="1" max="4000" step="1">
+    </label>
+    <div class="btns">
+      <button type="submit" class="primary">Show</button>
+      <button type="button" id="pPrint">Print</button>
+      <button type="button" id="pCopy">Copy</button>
+      <button type="button" id="pCsv">CSV</button>
+    </div>
+  </form>
+
+  <div id="prayerOut" class="out" aria-live="polite"></div>
+</section>
+
+<!-- ======================================================== QIBLA -->
+<section id="tab-qibla" class="panel">
+  <div class="modes" id="qiblaModes">
+    <button data-mode="angle" class="on">Angle from north</button>
+    <button data-mode="day">Shadow diagram (day)</button>
+    <button data-mode="month">Shadow chart (month)</button>
+    <button data-mode="year">Shadow chart (year)</button>
+  </div>
+  <form id="qiblaForm" class="controls" autocomplete="off">
+    <label data-for="day">Date <input type="date" id="qDate"></label>
+    <label data-for="month year">Month <select id="qMonth"></select></label>
+    <label data-for="month year">Year <input type="number" id="qYear" min="1901" max="2200"></label>
+    <div class="btns"><button type="submit" class="primary">Show</button><button type="button" id="qPrint">Print</button></div>
+  </form>
+  <div id="qiblaOut" class="out"></div>
+</section>
+
+<!-- ======================================================== CALENDAR -->
+<section id="tab-calendar" class="panel">
+  <div class="cards">
+    <article class="card">
+      <h2>Date conversion <span class="ur">تاریخ کی تبدیلی</span></h2>
+      <div class="two">
+        <fieldset><legend>Gregorian (A.D.)</legend>
+          <input type="date" id="cvDate">
+          <button id="cvA2H" class="primary" type="button">→ Hijri</button>
+        </fieldset>
+        <fieldset><legend>Hijri (A.H.)</legend>
+          <div class="row"><select id="cvHMonth"></select>
+          <input type="number" id="cvHDay" min="1" max="30" aria-label="Hijri day">
+          <input type="number" id="cvHYear" min="1" max="4000" aria-label="Hijri year"></div>
+          <button id="cvH2A" class="primary" type="button">→ Gregorian</button>
+        </fieldset>
+      </div>
+      <p id="cvOut" class="result"></p>
+    </article>
+
+    <article class="card">
+      <h2>New moon <span class="ur">نیا چاند</span></h2>
+      <div class="row">
+        <select id="nmMonth"></select>
+        <input type="number" id="nmYear" min="1" max="4000" aria-label="Hijri year">
+        <button id="nmGo" class="primary" type="button">Compute</button>
+      </div>
+      <p id="nmOut" class="result"></p>
+    </article>
+
+    <article class="card">
+      <h2>Moon's age <span class="ur">چاند کی عمر</span></h2>
+      <div class="row">
+        <input type="date" id="maDate">
+        <input type="time" id="maTime">
+        <button id="maGo" class="primary" type="button">Compute</button>
+      </div>
+      <p id="maOut" class="result"></p>
+    </article>
+  </div>
+</section>
+
+<!-- ======================================================== LOCATION -->
+<section id="tab-location" class="panel">
+  <div class="cards">
+    <article class="card wide">
+      <h2>Current location <span class="ur">موجودہ مقام</span></h2>
+      <input type="search" id="locSearch" placeholder="Search the gazetteer (e.g. Karachi, Makkah, London)…" aria-label="Search places">
+      <select id="locList" size="9" aria-label="Places"></select>
+      <p class="hint"><span id="locCount"></span> places. Pick one to use it everywhere in the app.</p>
+    </article>
+
+    <article class="card">
+      <h2>Custom location <span class="ur">اپنا مقام</span></h2>
+      <form id="locForm" autocomplete="off">
+        <label>Name <input id="cName" required maxlength="29"></label>
+        <div class="row">
+          <label>Latitude ° <input id="cLatD" type="number" min="0" max="90" required></label>
+          <label>′ <input id="cLatM" type="number" min="0" max="59" value="0" required></label>
+          <label>Hemisphere <select id="cLatS"><option value="0">N</option><option value="1">S</option></select></label>
+        </div>
+        <div class="row">
+          <label>Longitude ° <input id="cLonD" type="number" min="0" max="180" required></label>
+          <label>′ <input id="cLonM" type="number" min="0" max="59" value="0" required></label>
+          <label>&nbsp; <select id="cLonW"><option value="0">E</option><option value="1">W</option></select></label>
+        </div>
+        <div class="row">
+          <label>Zone: GMT <select id="cZoneNeg"><option value="0">+</option><option value="1">−</option></select></label>
+          <label>h <input id="cZoneH" type="number" min="0" max="14" value="0" required></label>
+          <label>m <input id="cZoneM" type="number" min="0" max="59" value="0" required></label>
+        </div>
+        <label class="chk"><input id="cDst" type="checkbox"> Observes daylight saving time</label>
+        <div id="cDstBox" class="dst" hidden>
+          <fieldset><legend>Starts</legend>
+            <select id="cDsNum"></select> <select id="cDsDow"></select> of <select id="cDsMon"></select>
+          </fieldset>
+          <fieldset><legend>Ends</legend>
+            <select id="cDeNum"></select> <select id="cDeDow"></select> of <select id="cDeMon"></select>
+          </fieldset>
+        </div>
+        <div class="btns"><button class="primary" type="submit">Use this location</button></div>
+      </form>
+    </article>
+
+    <article class="card">
+      <h2>Find me <span class="ur">میرا مقام</span></h2>
+      <p class="hint">Uses your device's GPS to fill latitude/longitude. Nothing is sent anywhere.</p>
+      <button id="geoBtn" type="button" class="primary">Use my current position</button>
+      <p id="geoOut" class="result"></p>
+    </article>
+  </div>
+</section>
+
+<!-- ======================================================== OPTIONS -->
+<section id="tab-options" class="panel">
+  <form id="optForm" class="cards" autocomplete="off">
+    <article class="card">
+      <h2>Fajr <span class="ur">فجر</span></h2>
+      <label class="chk"><input type="radio" name="fajrBy" value="1"> By sun's depression below horizon</label>
+      <label class="ind">Degrees <input id="oFajrDepr" type="number" min="6" max="24" step="1"></label>
+      <label class="chk"><input type="radio" name="fajrBy" value="0"> By fixed interval before sunrise</label>
+      <label class="ind">Minutes <input id="oFajrInt" type="number" min="20" max="120" step="1"></label>
+    </article>
+    <article class="card">
+      <h2>Isha <span class="ur">عشاء</span></h2>
+      <label class="chk"><input type="radio" name="ishaBy" value="1"> By sun's depression below horizon</label>
+      <label class="ind">Degrees <input id="oIshaDepr" type="number" min="6" max="24" step="1"></label>
+      <label class="chk"><input type="radio" name="ishaBy" value="0"> By fixed interval after sunset</label>
+      <label class="ind">Minutes <input id="oIshaInt" type="number" min="20" max="120" step="1"></label>
+    </article>
+    <article class="card">
+      <h2>Asr <span class="ur">عصر</span></h2>
+      <label class="chk"><input type="radio" name="asrBy" value="0"> Shafi‘i, Maliki, Hanbali (shadow = 1 × object)</label>
+      <label class="chk"><input type="radio" name="asrBy" value="1"> Hanafi (shadow = 2 × object)</label>
+    </article>
+    <article class="card">
+      <h2>Ishraq &amp; Asr Makruh <span class="ur">اشراق اور عصر مکروہ</span></h2>
+      <label class="ind">Ishraq: sun's altitude after sunrise (°)
+        <input id="oIshraq" type="number" min="0.1" max="10" step="0.1"></label>
+      <label class="ind">Asr Makruh: sun's altitude before sunset (°)
+        <input id="oMakruh" type="number" min="0.1" max="10" step="0.1"></label>
+      <p class="hint">Defaults: 1.4° and 2.3°. The altitude is of the sun's centre above the true horizon.</p>
+    </article>
+    <article class="card">
+      <h2>Extra columns <span class="ur">اضافی کالم</span></h2>
+      <label class="chk"><input id="oHijri" type="checkbox"> Hijri date (Gregorian-year schedules)</label>
+      <label class="chk"><input id="oQibla" type="checkbox"> Time when shadow points to Qibla</label>
+      <label class="chk"><input id="o24" type="checkbox"> 24-hour clock</label>
+    </article>
+    <div class="btns wide"><button class="primary" type="submit">Save</button><button type="button" id="oReset">Reset to defaults</button></div>
+  </form>
+</section>
+
+<!-- ======================================================== HELP -->
+<section id="tab-help" class="panel">
+  <article class="card prose">
+    <h2>About this program</h2>
+    <p>Minaret computes the Islamic prayer hours, the direction of the Qibla and converts between the Hijri and Gregorian calendars.
+    This is a web version of the Windows program <i>Minaret</i> by Kamal Abdali (1987–1998); the calculations follow the original
+    Visual Basic source (kept in this repository under <code>minaret-master/vb6-src</code>).</p>
+    <h3>Times shown</h3>
+    <ul>
+      <li><b>Fajr</b> – dawn: sun is below the horizon by the chosen angle (or fixed minutes before sunrise).</li>
+      <li><b>Shuruq</b> – sunrise (sun's centre 0.83° below the horizon).</li>
+      <li><b>Ishraq</b> – begins when the sun has risen <b>1.4°</b> above the horizon after sunrise (adjustable in Options).</li>
+      <li><b>Zuhr</b> – solar noon.</li>
+      <li><b>Asr</b> – afternoon: shadow equals the object (or twice, Hanafi) plus the noon shadow.</li>
+      <li><b>Asr Makruh</b> – begins when the sun is still <b>2.3°</b> above the horizon before sunset, and lasts till Maghrib (adjustable).</li>
+      <li><b>Maghrib</b> – sunset. <b>Isha</b> – night: sun below the horizon by the chosen angle (or fixed minutes after sunset).</li>
+    </ul>
+    <p>A <b>*</b> means that the event does not occur on that day at that latitude. Year 0 gives a <i>perpetual</i> schedule
+    (average of a four-year cycle, valid for any year). Dates 1901–2200 A.D. are supported.</p>
+    <h3>Hijri dates</h3>
+    <p>The Hijri month is assumed to begin when the crescent is 1.08 days after the astronomical new moon, as in the original program.
+    Actual local moon-sighting announcements can differ by a day.</p>
+    <h3>Privacy</h3>
+    <p>Everything is computed on your device; settings are kept in your browser only.</p>
+  </article>
+</section>
+</main>
+
+<footer>
+  <span>Based on Minaret © 1987–1998 Kamal Abdali · Web version</span>
+</footer>
+
+<script src="data/gazetteer.js"></script>
+<script src="js/minaret-core.js"></script>
+<script src="js/app.js"></script>
+<script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+</body>
+</html>

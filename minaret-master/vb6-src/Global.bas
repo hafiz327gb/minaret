@@ -54,6 +54,11 @@ Global Const HPR As Double = 3.81971863420549          ' hours per radian (12/pi
 Global Const BLANK = 32 'Asc(" ")
 Global Const ZERO = 48 'Asc("0")
 Global Const CRIT_AGE As Double = 1.08        '0.25 + Moon's age to start a new month
+' Altitude of the sun's centre above the true horizon (degrees):
+'   ISHRAQ_ALT      - ishraq begins when, after sunrise, the sun reaches this altitude
+'   ASRMAKRUH_ALT   - asr makruh time begins when, before sunset, the sun is this high
+Global Const ISHRAQ_ALT As Double = 1.4
+Global Const ASRMAKRUH_ALT As Double = 2.3
 Global Const LOCINFO_LEN% = 48 'w/o DST info was 40
 Global Const FULLINFO_LEN% = 47
 Global Const YEARPERP% = 2022 ' was 1994
@@ -150,7 +155,9 @@ Global weekdayName(1 To 7) As String * 9
 Global monthName(1 To 12) As String
 Global monthLbl(1 To 12) As String
 Global hijriMonthName(1 To 12) As String
-Global tim(0 To 365, 0 To 7) As Single
+' tim columns: 0 fajr, 1 shuruq, 2 zuhr, 3 asr, 4 maghrib, 5 isha,
+'   6,7 qibla shadow times, 8 ishraq, 9 asr makruh
+Global tim(0 To 365, 0 To 9) As Single
 'Global sch As form
 Global LF As String * 1
 Global NL As String * 2

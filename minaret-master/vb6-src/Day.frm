@@ -25,7 +25,7 @@ Begin VB.Form frmDay
       Height          =   492
       Left            =   5520
       TabIndex        =   15
-      Top             =   4200
+      Top             =   4560
       Width           =   1092
    End
    Begin VB.CommandButton cmdCompute 
@@ -33,12 +33,12 @@ Begin VB.Form frmDay
       Height          =   492
       Left            =   3600
       TabIndex        =   14
-      Top             =   4200
+      Top             =   4560
       Width           =   1212
    End
    Begin VB.Frame Frame 
       Caption         =   "Prayer hours"
-      Height          =   3372
+      Height          =   4092
       Index           =   1
       Left            =   3480
       TabIndex        =   32
@@ -57,10 +57,46 @@ Begin VB.Form frmDay
       Begin VB.Label lblTime 
          BorderStyle     =   1  'Fixed Single
          Height          =   252
+         Index           =   7
+         Left            =   2280
+         TabIndex        =   36
+         Top             =   2880
+         Width           =   972
+      End
+      Begin VB.Label lblTime 
+         BorderStyle     =   1  'Fixed Single
+         Height          =   252
+         Index           =   6
+         Left            =   2280
+         TabIndex        =   34
+         Top             =   1800
+         Width           =   972
+      End
+      Begin VB.Label Label3 
+         Caption         =   "`asr makruh"
+         Height          =   252
+         Index           =   7
+         Left            =   240
+         TabIndex        =   37
+         Top             =   2880
+         Width           =   1812
+      End
+      Begin VB.Label Label3 
+         Caption         =   "ishraq"
+         Height          =   252
+         Index           =   6
+         Left            =   240
+         TabIndex        =   35
+         Top             =   1800
+         Width           =   1812
+      End
+      Begin VB.Label lblTime 
+         BorderStyle     =   1  'Fixed Single
+         Height          =   252
          Index           =   5
          Left            =   2280
          TabIndex        =   31
-         Top             =   2880
+         Top             =   3600
          Width           =   972
       End
       Begin VB.Label lblTime 
@@ -69,7 +105,7 @@ Begin VB.Form frmDay
          Index           =   4
          Left            =   2280
          TabIndex        =   16
-         Top             =   2520
+         Top             =   3240
          Width           =   972
       End
       Begin VB.Label lblTime 
@@ -78,7 +114,7 @@ Begin VB.Form frmDay
          Index           =   3
          Left            =   2280
          TabIndex        =   17
-         Top             =   2160
+         Top             =   2520
          Width           =   972
       End
       Begin VB.Label lblTime 
@@ -87,7 +123,7 @@ Begin VB.Form frmDay
          Index           =   2
          Left            =   2280
          TabIndex        =   18
-         Top             =   1800
+         Top             =   2160
          Width           =   972
       End
       Begin VB.Label lblTime 
@@ -114,7 +150,7 @@ Begin VB.Form frmDay
          Index           =   5
          Left            =   240
          TabIndex        =   21
-         Top             =   2880
+         Top             =   3600
          Width           =   1812
       End
       Begin VB.Label Label3 
@@ -123,7 +159,7 @@ Begin VB.Form frmDay
          Index           =   4
          Left            =   240
          TabIndex        =   22
-         Top             =   2520
+         Top             =   3240
          Width           =   1812
       End
       Begin VB.Label Label3 
@@ -132,7 +168,7 @@ Begin VB.Form frmDay
          Index           =   3
          Left            =   240
          TabIndex        =   23
-         Top             =   2160
+         Top             =   2520
          Width           =   1812
       End
       Begin VB.Label Label3 
@@ -141,7 +177,7 @@ Begin VB.Form frmDay
          Index           =   2
          Left            =   240
          TabIndex        =   24
-         Top             =   1800
+         Top             =   2160
          Width           =   1812
       End
       Begin VB.Label Label3 
@@ -371,6 +407,9 @@ Private Sub cmdCompute_Click()
         'lblTime(i).Caption = NumToStr(h, 2, BLANK) & ":" & NumToStr(m, 2, ZERO)
         frmDay.lblTime(i).Caption = TimeTo12hr(tim(nday, i), 0)
     Next i
+    ' ishraq and asr makruh (tim columns 8 and 9)
+    frmDay.lblTime(6).Caption = TimeTo12hr(tim(nday, 8), 0)
+    frmDay.lblTime(7).Caption = TimeTo12hr(tim(nday, 9), 0)
     lblDOW.Caption = weekdayName(dayOfWeek)
     'lblLoc = pname  'no need to change
 End Sub

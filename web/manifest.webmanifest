@@ -1,0 +1,15 @@
+{
+  "name": "Minaret – Prayer Times, Qibla & Hijri Calendar",
+  "short_name": "Minaret",
+  "description": "Islamic prayer times (with Ishraq and Asr Makruh), Qibla direction and Hijri calendar conversion.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ee",
+  "theme_color": "#0f5c4d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

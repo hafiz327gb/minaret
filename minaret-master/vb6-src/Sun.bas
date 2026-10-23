@@ -6,7 +6,9 @@ Option Explicit
 'static pascal void drawShadow (WindowPtr windPtr, short itemNo)
 'void monthChart (void)
 'void yearChart (void)
-Dim time0(0 To 5) As Double, coalt(0 To 5) As Double
+' time0, coalt indices: 0 fajr, 1 shuruq, 3 asr, 4 maghrib, 5 isha,
+'   6 ishraq, 7 asr makruh
+Dim time0(0 To 7) As Double, coalt(0 To 7) As Double
 Dim cosobl As Double
 Dim sinobl As Double
 Dim dperigee As Double
@@ -95,11 +97,16 @@ Sub compute(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
     time0(3) = 15#
     time0(4) = 18#
     time0(5) = 20#
+    time0(6) = 6.5
+    time0(7) = 17.5
 '  coaltitudes of sun at fajr, shuruq, maghrib, isha */
     coalt(0) = deg2rad(CDbl(90 + fajrDepr))
     coalt(1) = deg2rad(90.83)
     coalt(4) = coalt(1)
     coalt(5) = deg2rad(CDbl(90 + ishaDepr))
+'  coaltitudes of sun at ishraq (after sunrise) and asr makruh (before sunset) */
+    coalt(6) = deg2rad(90# - ISHRAQ_ALT)
+    coalt(7) = deg2rad(90# - ASRMAKRUH_ALT)
 '  get approximate times for the first day specified. */
 '  later on, each day's times are used as approximate times */
 '  for next day */
@@ -122,6 +129,18 @@ Sub compute(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
         time0(1) = t
     Else
         time0(1) = 21#
+    End If
+    t = tempus(first, coalt(6), time0(6), am)
+    If t < 24# Then
+        time0(6) = t
+    Else
+        time0(6) = 6.5
+    End If
+    t = tempus(first, coalt(7), time0(7), pm)
+    If t < 24# Then
+        time0(7) = t
+    Else
+        time0(7) = 17.5
     End If
     If fajrByDepr <> 0 Then
         t = tempus(first, coalt(0), time0(0), am)
@@ -174,6 +193,20 @@ Sub compute(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
         Else
             time0(4) = 21#
         End If
+        t = tempus(k + 1, coalt(6), time0(6), am)
+        tim(l, 8) = t
+        If t < 24# Then
+            time0(6) = t
+        Else
+            time0(6) = 6.5
+        End If
+        t = tempus(k + 1, coalt(7), time0(7), pm)
+        tim(l, 9) = t
+        If t < 24# Then
+            time0(7) = t
+        Else
+            time0(7) = 17.5
+        End If
         If (fajrByDepr <> 0) Then
             t = tempus(k + 1, coalt(0), time0(0), am)
             tim(l, 0) = t
@@ -206,6 +239,8 @@ Sub compute(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
             For k = 0 To 5
                tim(i, k) = tim(i, k) + 1#
             Next k
+            tim(i, 8) = tim(i, 8) + 1#
+            tim(i, 9) = tim(i, 9) + 1#
         Next i
     End If
     If (end2DayLight <> 0) Then
@@ -213,6 +248,8 @@ Sub compute(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
             For k = 0 To 5
                tim(i, k) = tim(i, k) + 1#
             Next k
+            tim(i, 8) = tim(i, 8) + 1#
+            tim(i, 9) = tim(i, 9) + 1#
         Next i
     End If
 End Sub
@@ -369,7 +406,11 @@ Sub display(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
     Dim i As Integer
     Dim j As Integer
     Dim l As Integer
+    Dim cols As Variant
 
+    ' display order of the tim() columns:
+    ' fajr, shuruq, ishraq, zuhr, asr, asr makruh, maghrib, isha
+    cols = Array(0, 1, 8, 2, 3, 9, 4, 5)
     If addHijriDate <> 0 Then
         Call augJulDay(aYear, 1, first, 0, 0, ajD)
     End If
@@ -382,11 +423,8 @@ Sub display(ByVal aYear As Integer, ByVal first As Integer, ByVal last As Intege
             Call augJD2H(ajD, AHY, AHM, AHD)
             msg = msg & "  " & NumToStr(AHM, 2, ZERO) & "/" & NumToStr(AHD, 2, ZERO) '& " "
         End If
-        For j = 0 To 5
-            If (j = 2) Then
-                msg = msg & " "
-            End If
-            msg = msg & " " & TimeTo12hr(tim(l, j), 0)
+        For j = 0 To 7
+            msg = msg & "  " & TimeTo12hr(tim(l, cols(j)), 0)
         Next j
         If addQiblaTime <> 0 Then
             ' tim(l,6), tim(l,7) have time for shadow collinear with qibla, opposite
@@ -417,7 +455,11 @@ Sub displayAH(ByVal aYear As Integer, ByVal aMonth As Integer, ByVal first As In
     Dim i As Integer
     Dim j As Integer
     Dim l As Integer
+    Dim cols As Variant
 
+    ' display order of the tim() columns:
+    ' fajr, shuruq, ishraq, zuhr, asr, asr makruh, maghrib, isha
+    cols = Array(0, 1, 8, 2, 3, 9, 4, 5)
     Call augJulDay(aYear, 1, first + 1, 0, 0, ajD)
     i = startdate
     msg = ""
@@ -426,11 +468,8 @@ Sub displayAH(ByVal aYear As Integer, ByVal aMonth As Integer, ByVal first As In
         'ajD = ajD + 1
         Call caldat(ajD, ADY, ADM, ADD, aHour, aMinute, dow)
         msg = msg & "  " & NumToStr(ADM, 2, ZERO) & "/" & NumToStr(ADD, 2, ZERO) '& " "
-        For j = 0 To 5
-            If (j = 2) Then
-                msg = msg & " "
-            End If
-            msg = msg & " " & TimeTo12hr(tim(l, j), 0)
+        For j = 0 To 7
+            msg = msg & "  " & TimeTo12hr(tim(l, cols(j)), 0)
         Next j
         msg = msg & NL
         i = i + 1
@@ -599,7 +638,7 @@ Sub headr(ByVal aMonth As Integer, ByVal aYear As Integer, ByVal hasDayLt As Int
         'msg = msg & "D E C E M B E R" & NL
     'End Select
     'schTxt.SelText = msg
-    msg = msg & NL & "    ----------------------------------------"
+    msg = msg & NL & "    -----------------------------------------------------------"
     If addHijriDate <> 0 Then
         msg = msg & "-------"
     End If
@@ -612,19 +651,19 @@ Sub headr(ByVal aMonth As Integer, ByVal aYear As Integer, ByVal hasDayLt As Int
     Else
         msg = msg & "   "
     End If
-    msg = msg & "  Fajr Shuruq  Zuhr  Asr Maghrib Isha"
+    msg = msg & "   Fajr Shuruq Ishraq   Zuhr    Asr    Asr Magrib   Isha"
     If addQiblaTime <> 0 Then
         msg = msg & "  Shadow"
     End If
-    msg = msg & NL & "    Date"
+    msg = msg & NL & "   Date"
     If addHijriDate <> 0 Then
         msg = msg & "  M/D  "
     End If
-    msg = msg & " Dawn Snrise Noon Afnoon Snset Night"
+    msg = msg & "   Dawn Snrise (1.4" & Chr(176) & ")   Noon Afnoon Makruh  Snset  Night"
     If addQiblaTime <> 0 Then
         msg = msg & " ToQibla"
     End If
-    msg = msg & NL & "    ----------------------------------------"
+    msg = msg & NL & "    -----------------------------------------------------------"
     If addHijriDate <> 0 Then
         msg = msg & "-------"
     End If
@@ -648,14 +687,14 @@ Sub headrAH(ByVal aMonth As Integer, ByVal aYear As Integer)
     Call H2X(aYear, aMonth, 1, ADY, ADM, ADD, dow)
     msg = "                   "   ' 19 spaces */
     msg = msg & hijriMonthName(aMonth) & " " & aYear & NL
-    msg = msg & NL & "    -----------------------------------------------"
+    msg = msg & NL & "    ------------------------------------------------------------------"
     msg = msg & NL & "    "
     msg = msg & "    " & NumToStr(ADY, 4, BLANK) & "AD"
-    msg = msg & "  Fajr Shuruq  Zuhr  Asr Maghrib Isha"
-    msg = msg & NL & "    Date"
+    msg = msg & "   Fajr Shuruq Ishraq   Zuhr    Asr    Asr Magrib   Isha"
+    msg = msg & NL & "   Date"
     msg = msg & "  M/D  "
-    msg = msg & " Dawn Snrise Noon Afnoon Snset Night"
-    msg = msg & NL & "    -----------------------------------------------"
+    msg = msg & "   Dawn Snrise (1.4" & Chr(176) & ")   Noon Afnoon Makruh  Snset  Night"
+    msg = msg & NL & "    ------------------------------------------------------------------"
     msg = msg & NL
     schTxt.SelText = msg
 End Sub
