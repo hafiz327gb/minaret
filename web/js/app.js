@@ -199,12 +199,12 @@
         });
       });
     } else if (pMode === 'ramazan') {
-      var rs = +document.querySelector('input[name=ramOpt]:checked').value, rn = rs === 8 ? 30 : 29;   // both end on 9 March 2026
+      var rs = +document.querySelector('input[name=ramOpt]:checked').value, rn = rs === 8 ? 30 : 29;   // both end on 9 March 2027
       // Sehri end = Fajr 18° − 2 min, Fajr azan = Fajr 15°, Iftar = sunset + 2 min (fixed, whatever the options say)
       var rst = Object.assign({}, st, { fajrByDepr: 1, fajrAngles: [18, 15], fajrDepr: 18, maghribDepr: 0, addHijriDate: 0, addQiblaTime: 0 });
-      var rmo = { 2: M.monthSchedule(2, 2026, loc, rst).rows, 3: M.monthSchedule(3, 2026, loc, rst).rows };
-      html = '<div class="head"><h2>Ramazan 1447 H — Sehri &amp; Iftar timetable <span class="ur">سحر و افطار</span></h2><p class="meta">' + locMeta(loc) + '</p></div>' +
-        '<div class="tblwrap"><table class="sch"><caption>Ramazan 1447 H · ' + rs + ' Feb – 9 Mar 2026</caption><thead><tr><th>Date<small>Feb–Mar 2026</small></th><th>Ramazan<small>1447 H</small></th>' +
+      var rmo = { 2: M.monthSchedule(2, 2027, loc, rst).rows, 3: M.monthSchedule(3, 2027, loc, rst).rows };
+      html = '<div class="head"><h2>Ramazan 1448 H — Sehri &amp; Iftar timetable <span class="ur">سحر و افطار</span></h2><p class="meta">' + locMeta(loc) + '</p></div>' +
+        '<div class="tblwrap"><table class="sch"><caption>Ramazan 1448 H · ' + rs + ' Feb – 9 Mar 2027</caption><thead><tr><th>Date<small>Feb–Mar 2027</small></th><th>Ramazan<small>1448 H</small></th>' +
         '<th>انتہائے سحر<small>Fajr18 − 2 min</small></th><th>اذانِ فجر<small>Fajr15</small></th><th>وقتِ افطار<small>Sunset + 2 min</small></th></tr></thead><tbody>';
       for (var ri = 0; ri < rn; ri++) {
         var gd = rs + ri, gm = gd > 28 ? 3 : 2; if (gm === 3) gd -= 28;

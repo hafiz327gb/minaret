@@ -42,4 +42,4 @@ from local moon-sighting announcements.
 - **Options → Adjust times**: add or subtract whole minutes (−120…+120) for any time. With several Fajr/Isha angles (or a method with one) every angle gets its own row; adjusted columns show e.g. "· −5m" in their header. Display only; saved with the settings.
 - **Midday / Zuhr / Chasht**: *Midday* (نصف النہار) is solar noon; *Zuhr* is Midday + 5 minutes; *Chasht* (چاشت) is a quarter of the way from sunrise to midday.
 - **Prayer → Specific dates**: choose a start and end date; every day in between is shown, one table per month (up to three years), with CSV/Print/Copy like the other modes.
-- **Prayer → Ramazan 1447H**: Sehri/Iftar timetable for 2026 (starting 8 or 9 Feb, ending 9 Mar): Sehri end = Fajr 18° − 2 min, Fajr azan = Fajr 15°, Iftar = sunset + 2 min; with the Urdu precaution note and CSV.
+- **Prayer → Ramazan 1448H**: Sehri/Iftar timetable for 2027 (starting 8 or 9 Feb, ending 9 Mar 2027): Sehri end = Fajr 18° − 2 min, Fajr azan = Fajr 15°, Iftar = sunset + 2 min; with the Urdu precaution note and CSV.
