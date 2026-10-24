@@ -113,7 +113,9 @@
     angleCols('fajr', 'Fajr', 'فجر', 'Dawn');
     one('shuruq', 'Shuruq', 'طلوع', 'Sunrise');
     one('ishraq', 'Ishraq', 'اشراق', '+' + st.ishraqAlt + '°', 1);
-    one('zuhr', 'Zuhr', 'ظہر', 'Noon');
+    one('chasht', 'Chasht', 'چاشت', '¼ sunrise → midday', 1);
+    one('midday', 'Midday', 'نصف النہار', 'Solar noon');
+    one('zuhr', 'Zuhr', 'ظہر', 'Midday + 5 min');
     one('asr', 'Asr 1×', 'عصر (مثلِ اول)', 'Shafi‘i');
     one('asr2', 'Asr 2×', 'عصر (مثلِ ثانی)', 'Hanafi');
     one('asrMakruh', 'Asr Makruh', 'عصر مکروہ', '+' + st.asrMakruhAlt + '°', 1);
@@ -525,7 +527,7 @@
   }
   // ---- minutes added to / subtracted from each prayer (shown for every Fajr / Isha angle too)
   var offDraft = {};
-  var OFF_FIXED = [['shuruq', 'Shuruq', 'طلوع'], ['ishraq', 'Ishraq', 'اشراق'], ['zuhr', 'Zuhr', 'ظہر'], ['asr', 'Asr 1×', 'عصر مثلِ اول'],
+  var OFF_FIXED = [['shuruq', 'Shuruq', 'طلوع'], ['ishraq', 'Ishraq', 'اشراق'], ['chasht', 'Chasht', 'چاشت'], ['midday', 'Midday', 'نصف النہار'], ['zuhr', 'Zuhr', 'ظہر'], ['asr', 'Asr 1×', 'عصر مثلِ اول'],
     ['asr2', 'Asr 2×', 'عصر مثلِ ثانی'], ['asrMakruh', 'Asr Makruh', 'عصر مکروہ'], ['maghrib', 'Maghrib', 'مغرب']];
   /** The settings the form currently describes (selected method, or the custom fields as typed so far). */
   function formSettings() {
@@ -544,8 +546,7 @@
       list.forEach(function (a) { rows.push([multi ? which + ':' + a : which, en + (multi ? ' ' + a + '°' : ''), ur]); });
     }
     ang('fajr', 'Fajr', 'فجر');
-    OFF_FIXED.slice(0, 6).forEach(function (r) { rows.push(r); });
-    rows.push(OFF_FIXED[6]);
+    OFF_FIXED.forEach(function (r) { rows.push(r); });
     ang('isha', 'Isha', 'عشاء');
     return rows;
   }

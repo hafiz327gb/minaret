@@ -69,10 +69,12 @@ for (const c of cities) {
     if (r.isha < 24) { near(alt('isha'), -st.ishaDepr, 0.12, tag + ' isha alt'); altChecked++; }
     altChecked += 4;
     // ordering
-    ok(r.shuruq < r.ishraq && r.ishraq < r.zuhr && r.zuhr < r.asr && r.asr < r.asr2 && r.asr2 < r.asrMakruh &&
+    ok(r.shuruq < r.ishraq && r.ishraq < r.chasht && r.chasht < r.midday && r.midday < r.zuhr && r.zuhr < r.asr && r.asr < r.asr2 && r.asr2 < r.asrMakruh &&
       r.asrMakruh < r.maghrib && r.maghrib < r.isha, tag + ' ordering');
+    near(r.zuhr, r.midday + 5 / 60, 1e-9, tag + ' zuhr = midday + 5 min');
+    near(r.chasht, r.shuruq + (r.midday - r.shuruq) / 4, 1e-9, tag + ' chasht = quarter of sunrise..midday');
     // asr: shadow length = object + noon shadow
-    const noonAlt = sunAlt(y, m, d, r.zuhr, noDst.tz, latDeg(noDst), lonDeg(noDst));
+    const noonAlt = sunAlt(y, m, d, r.midday, noDst.tz, latDeg(noDst), lonDeg(noDst));
     const asrAlt = alt('asr');
     const cot = a => 1 / Math.tan(a * M.RPD);
     near(cot(asrAlt), 1 + cot(noonAlt), 0.03, tag + ' asr shadow (shafi)');
@@ -85,7 +87,7 @@ console.log('sun-altitude checks:', altChecked);
   const loc = findLoc('Karachi');
   for (const [y, m, d] of dates) {
     const r = M.daySchedule(d, m, y, Object.assign({}, loc, { dst: 0 }), st).times, nl = Object.assign({}, loc, { dst: 0 });
-    const noonAlt = sunAlt(y, m, d, r.zuhr, nl.tz, latDeg(nl), lonDeg(nl)), cot = a => 1 / Math.tan(a * M.RPD);
+    const noonAlt = sunAlt(y, m, d, r.midday, nl.tz, latDeg(nl), lonDeg(nl)), cot = a => 1 / Math.tan(a * M.RPD);
     near(cot(sunAlt(y, m, d, r.asr, nl.tz, latDeg(nl), lonDeg(nl))), 1 + cot(noonAlt), 0.03, `asr 1x ${y}-${m}-${d}`);
     near(cot(sunAlt(y, m, d, r.asr2, nl.tz, latDeg(nl), lonDeg(nl))), 2 + cot(noonAlt), 0.03, `asr 2x ${y}-${m}-${d}`);
     ok(r.asr < r.asr2 && r.asr2 < r.asrMakruh, `asr < asr2 < makruh ${y}-${m}-${d}`);

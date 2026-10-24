@@ -40,3 +40,4 @@ from local moon-sighting announcements.
 - **Asr** is always shown twice: 1× (Shafi‘i, Maliki, Hanbali) and 2× (Hanafi).
 - **Location**: search and pick a city from the list; its coordinates, time zone and DST rule fill the form at the right, where they can be edited and saved as your own place. A geolocation button is also provided.
 - **Options → Adjust times**: add or subtract whole minutes (−120…+120) for any time. With several Fajr/Isha angles (or a method with one) every angle gets its own row; adjusted columns show e.g. "· −5m" in their header. Display only; saved with the settings.
+- **Midday / Zuhr / Chasht**: *Midday* (نصف النہار) is solar noon; *Zuhr* is Midday + 5 minutes; *Chasht* (چاشت) is a quarter of the way from sunrise to midday.

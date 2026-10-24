@@ -1,5 +1,5 @@
 // Offline cache: the whole app is static, so cache it on first visit.
-var CACHE = 'minaret-v1';
+var CACHE = 'minaret-v2';
 var FILES = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/minaret-core.js',
   'data/gazetteer.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', function (e) {

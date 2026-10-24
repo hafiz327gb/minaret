@@ -197,7 +197,8 @@
   }
 
   // ------------------------------------------------------------ prayer times
-  var TIME_KEYS = ['fajr', 'shuruq', 'ishraq', 'zuhr', 'asr', 'asr2', 'asrMakruh', 'maghrib', 'isha'];
+  var ZUHR_DELAY = 5;   // minutes after midday
+  var TIME_KEYS = ['fajr', 'shuruq', 'ishraq', 'chasht', 'midday', 'zuhr', 'asr', 'asr2', 'asrMakruh', 'maghrib', 'isha'];
 
   /** Hijri month (1..12) on day-of-year `nday1` (1-based) of Gregorian year y, at the location's local midnight. */
   function hijriMonthOfDay(y, nday1, loc) {
@@ -333,12 +334,14 @@
       k = (l > 59 && aYear === 0) ? l - 1 : l;     // Feb 29 and Mar 1 share times
       var row = { fajrs: [], ishas: [] };
       n = noontime(C, loc, k + 1);
-      row.zuhr = n.time;
+      row.midday = n.time;                 // solar noon (nisf al-nahar)
+      row.zuhr = n.time + ZUHR_DELAY / 60;  // Zuhr begins a few minutes after midday
       coalt.asr = Math.atan(1 + Math.tan(n.coaltn));
       coalt.asr2 = Math.atan(2 + Math.tan(n.coaltn));
 
       t = tempus(C, loc, k + 1, coalt.shuruq, t0.shuruq, am);
       row.shuruq = t; t0.shuruq = keep(t, 5);
+      row.chasht = t < 24 ? t + (n.time - t) / 4 : t;   // a quarter of the way from sunrise to midday
       t = tempus(C, loc, k + 1, coalt.asr, t0.asr, pm);
       row.asr = t; t0.asr = keep(t, 15);
       t = tempus(C, loc, k + 1, coalt.asr2, t0.asr2, pm);
