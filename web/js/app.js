@@ -215,7 +215,7 @@
         html += '<tr' + (rr.dow === 6 ? ' class="fri"' : '') + '><td>' + gd + ' ' + M.MONTH[gm - 1].slice(0, 3) + '</td><td>' + dayName(rr.dow).slice(0, 3) + '</td><td>' + (ri + 1) + '</td>' +
           '<td>' + T(rr.fajrs[0] - 2 / 60) + '</td><td>' + T(rr.fajrs[1]) + '</td><td>' + T(rr.maghrib + 2 / 60) + '</td></tr>';
       }
-      html += '</tbody></table></div><p class="ur ramnote" dir="rtl">' + RAM_NOTE + '</p>';
+      html += '</tbody></table></div><p class="ur ramnote" dir="rtl">' + RAM_NOTE.replace(/انتہائے سحر|اذانِ فجر|وقتِ افطار/g, '<mark>$&</mark>') + '</p>';
     } else if (pMode === 'range') {
       var a = parseDate($('pFrom').value), b = parseDate($('pTo').value);
       function bad(x) { return !x || x.y < 1901 || x.y > 2200 || !validGregorian(x.y, x.m, x.d); }

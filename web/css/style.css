@@ -191,3 +191,4 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .tblwrap.fit { overflow: clip; }
 .tblwrap.fit table.sch thead th { top: var(--topH, 0px); }
 .tblwrap.wide { overflow: auto; max-height: calc(100vh - var(--topH, 6rem) - 1rem); }
+.ramnote mark { background: var(--hi); color: var(--brand); font-weight: 700; padding: .05em .35em; border-radius: 5px; box-shadow: inset 0 -2px 0 var(--accent); }
