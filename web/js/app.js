@@ -130,7 +130,9 @@
 
   function scheduleTable(rows, o) {
     var h = '<div class="tblwrap' + (o.pageBreak ? ' month-break' : '') + '"><table class="sch"><caption>' + esc(o.caption) + '</caption><thead><tr>';
+    var hasDow = rows.some(function (r) { return r.dow; });
     h += '<th>' + (o.firstHead || 'Date') + '</th>';
+    if (hasDow) h += '<th>Day</th>';
     if (o.second) h += '<th>' + o.second + '</th>';
     var cols = columns();
     cols.forEach(function (c) { h += colHead(c); });
@@ -141,7 +143,8 @@
       if (o.isToday && o.isToday(r)) cls.push('today');
       if (r.dow === 6) cls.push('fri');
       h += '<tr' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>';
-      h += '<td>' + r.day + (r.dow ? ' <span class="dn">' + dayName(r.dow).slice(0, 3) + '</span>' : '') + '</td>';
+      h += '<td>' + r.day + '</td>';
+      if (hasDow) h += '<td>' + (r.dow ? dayName(r.dow).slice(0, 3) : '') + '</td>';
       if (o.second) h += '<td>' + (o.hijri ? (r.hijri || '') : (r.greg || '')) + '</td>';
       cols.forEach(function (c) { h += '<td class="' + (c.extra ? 'xt' : '') + '">' + T(c.get(r)) + '</td>'; });
       if (o.qibla) h += '<td>' + (r.qibla === undefined ? '' : (settings.use24 ? M.formatTime24(r.qibla) : T12(r.qibla))) + '</td>';
@@ -204,12 +207,12 @@
       var rst = Object.assign({}, st, { fajrByDepr: 1, fajrAngles: [18, 15], fajrDepr: 18, maghribDepr: 0, addHijriDate: 0, addQiblaTime: 0 });
       var rmo = { 2: M.monthSchedule(2, 2027, loc, rst).rows, 3: M.monthSchedule(3, 2027, loc, rst).rows };
       html = '<div class="head"><h2>Ramazan 1448 H — Sehri &amp; Iftar timetable <span class="ur">سحر و افطار</span></h2><p class="meta">' + locMeta(loc) + '</p></div>' +
-        '<div class="tblwrap"><table class="sch"><caption>Ramazan 1448 H · ' + rs + ' Feb – 9 Mar 2027</caption><thead><tr><th>Date<small>Feb–Mar 2027</small></th><th>Ramazan<small>1448 H</small></th>' +
+        '<div class="tblwrap"><table class="sch"><caption>Ramazan 1448 H · ' + rs + ' Feb – 9 Mar 2027</caption><thead><tr><th>Date<small>Feb–Mar 2027</small></th><th>Day</th><th>Ramazan<small>1448 H</small></th>' +
         '<th>انتہائے سحر<small>Fajr18 − 2 min</small></th><th>اذانِ فجر<small>Fajr15</small></th><th>وقتِ افطار<small>Sunset + 2 min</small></th></tr></thead><tbody>';
       for (var ri = 0; ri < rn; ri++) {
         var gd = rs + ri, gm = gd > 28 ? 3 : 2; if (gm === 3) gd -= 28;
         var rr = rmo[gm][gd - 1];
-        html += '<tr' + (rr.dow === 6 ? ' class="fri"' : '') + '><td>' + gd + ' ' + M.MONTH[gm - 1].slice(0, 3) + ' <span class="dn">' + dayName(rr.dow).slice(0, 3) + '</span></td><td>' + (ri + 1) + '</td>' +
+        html += '<tr' + (rr.dow === 6 ? ' class="fri"' : '') + '><td>' + gd + ' ' + M.MONTH[gm - 1].slice(0, 3) + '</td><td>' + dayName(rr.dow).slice(0, 3) + '</td><td>' + (ri + 1) + '</td>' +
           '<td>' + T(rr.fajrs[0] - 2 / 60) + '</td><td>' + T(rr.fajrs[1]) + '</td><td>' + T(rr.maghrib + 2 / 60) + '</td></tr>';
       }
       html += '</tbody></table></div><p class="ur ramnote" dir="rtl">' + RAM_NOTE + '</p>';
