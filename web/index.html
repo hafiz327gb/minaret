@@ -32,6 +32,7 @@
     <button data-mode="month">Month</button>
     <button data-mode="year">Year</button>
     <button data-mode="hijri">Hijri month</button>
+    <button data-mode="range">Specific dates</button>
   </div>
 
   <form id="prayerForm" class="controls" autocomplete="off">
@@ -49,6 +50,12 @@
     </label>
     <label data-for="hijri">Hijri year
       <input type="number" id="pHYear" min="1" max="4000" step="1">
+    </label>
+    <label data-for="range">From
+      <input type="date" id="pFrom" required>
+    </label>
+    <label data-for="range">To
+      <input type="date" id="pTo" required>
     </label>
     <div class="btns">
       <button type="submit" class="primary">Show</button>

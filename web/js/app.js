@@ -197,6 +197,27 @@
           qibla: st.addQiblaTime, pageBreak: true, isToday: function (r) { return yy === today.y && i + 1 === today.m && r.day === today.d; }
         });
       });
+    } else if (pMode === 'range') {
+      var a = parseDate($('pFrom').value), b = parseDate($('pTo').value);
+      function bad(x) { return !x || x.y < 1901 || x.y > 2200 || !validGregorian(x.y, x.m, x.d); }
+      if (bad(a) || bad(b)) return msg(out, 'Please choose two valid dates between 1901 and 2200 A.D.', true);
+      function key(x) { return x.y * 10000 + x.m * 100 + x.d; }
+      if (key(a) > key(b)) { var sw = a; a = b; b = sw; }                      // either order works
+      var days = Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86400000) + 1;
+      if (days > 1100) return msg(out, 'Please choose a period of at most three years (' + days + ' days chosen).', true);
+      html = '<div class="head"><h2>' + a.d + ' ' + M.MONTH[a.m - 1] + ' ' + a.y + ' to ' + b.d + ' ' + M.MONTH[b.m - 1] + ' ' + b.y +
+        ' — Prayer schedule</h2><p class="meta">' + locMeta(loc) + ' · ' + days + (days === 1 ? ' day' : ' days') + '</p></div>';
+      for (var ry = a.y, rm = a.m; ry * 100 + rm <= b.y * 100 + b.m; rm === 12 ? (ry++, rm = 1) : rm++) {
+        (function (cy, cm) {
+          var lo = (cy === a.y && cm === a.m) ? a.d : 1, hi = (cy === b.y && cm === b.m) ? b.d : 31;
+          var rows = M.monthSchedule(cm, cy, loc, st).rows.filter(function (r) { return r.day >= lo && r.day <= hi; });
+          html += scheduleTable(rows, {
+            caption: M.MONTH[cm - 1] + ' ' + cy + ' A.D.' + ((lo > 1 || hi < 31) ? ' (' + rows[0].day + '–' + rows[rows.length - 1].day + ')' : ''),
+            second: st.addHijriDate ? 'Hijri<small>M/D</small>' : '', hijri: true, qibla: st.addQiblaTime, pageBreak: true,
+            isToday: function (r) { return cy === today.y && cm === today.m && r.day === today.d; }
+          });
+        })(ry, rm);
+      }
     } else {
       var hy = validYear($('pHYear').value, 1, 4000, false), hm = +$('pHMonth').value;
       if (hy < 0) return msg(out, 'Hijri year must be between 1 and 4000.', true);
@@ -222,7 +243,7 @@
   }
   document.querySelectorAll('#prayerModes button').forEach(function (b) { b.addEventListener('click', function () { setPrayerMode(b.dataset.mode); }); });
   $('prayerForm').addEventListener('submit', function (e) { e.preventDefault(); renderPrayer(); });
-  ['pDate', 'pMonth', 'pYear', 'pHMonth', 'pHYear'].forEach(function (id) { $(id).addEventListener('change', renderPrayer); });
+  ['pDate', 'pMonth', 'pYear', 'pHMonth', 'pHYear', 'pFrom', 'pTo'].forEach(function (id) { $(id).addEventListener('change', renderPrayer); });
 
   function tableText(sep) {
     var lines = [];
@@ -668,6 +689,8 @@
     ['pMonth', 'qMonth'].forEach(function (id) { fillMonths($(id), months, today.m); });
     ['pHMonth', 'cvHMonth', 'nmMonth'].forEach(function (id) { fillMonths($(id), M.HIJRI_MONTH, 1); });
     $('pYear').value = today.y; $('qYear').value = today.y;
+    var wk = new Date(today.y, today.m - 1, today.d + 6);
+    $('pFrom').value = iso(today.y, today.m, today.d); $('pTo').value = iso(wk.getFullYear(), wk.getMonth() + 1, wk.getDate());
     $('pDate').value = iso(today.y, today.m, today.d); $('qDate').value = iso(today.y, today.m, today.d);
     $('cvDate').value = iso(today.y, today.m, today.d);
     $('maDate').value = iso(today.y, today.m, today.d); $('maTime').value = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
