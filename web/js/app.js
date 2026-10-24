@@ -45,8 +45,9 @@
     if (persist !== false) save('place', p);
     renderCurrent();
   }
-  function fmtLat(l) { return l.latD + '°' + pad2(l.latM) + '′ ' + (l.latS ? 'S' : 'N'); }
-  function fmtLon(l) { return l.lonD + '°' + pad2(l.lonM) + '′ ' + (l.lonW ? 'W' : 'E'); }
+  function fmtSec(v) { if (!v) return ''; var t = Number(v.toFixed(2)); return (t < 10 ? '0' : '') + t + '″'; }
+  function fmtLat(l) { return l.latD + '°' + pad2(l.latM) + '′' + fmtSec(l.latSec) + ' ' + (l.latS ? 'S' : 'N'); }
+  function fmtLon(l) { return l.lonD + '°' + pad2(l.lonM) + '′' + fmtSec(l.lonSec) + ' ' + (l.lonW ? 'W' : 'E'); }
   function fmtZone(l) { return (l.zoneNeg ? '−' : '+') + l.zoneH + (l.zoneM ? ':' + pad2(l.zoneM) : '') + (l.dst ? ' (DST)' : ''); }
 
   // ------------------------------------------------------------ helpers
@@ -454,10 +455,40 @@
   }
 
   /** Show a place's details in the manual-coordinates form. */
+  // ---- coordinate entry: degrees-minutes-seconds or decimal degrees
+  var locFmt = load('locFmt', 'dms') === 'dec' ? 'dec' : 'dms';
+  function decStr(d, m, sec, neg) { var v = (+d || 0) + (+m || 0) / 60 + (+sec || 0) / 3600; v = Math.round(v * 1e6) / 1e6; return String(neg && v ? -v : v); }
+  function splitDms(v) {
+    var neg = v < 0; v = Math.abs(v);
+    var d = Math.floor(v + 1e-12), rem = (v - d) * 60, m = Math.floor(rem + 1e-9), sec = Math.round((rem - m) * 6000) / 100;
+    if (sec >= 60) { sec = 0; m++; } if (m >= 60) { m = 0; d++; }
+    return { d: d, m: m, sec: sec, neg: neg ? 1 : 0 };
+  }
+  function setLocFmt(f) {
+    var cur = locFmt;
+    if (f === 'dec' && cur === 'dms') {              // carry the entered values over
+      $('cLatDec').value = decStr($('cLatD').value, $('cLatM').value, $('cLatSec').value, +$('cLatS').value);
+      $('cLonDec').value = decStr($('cLonD').value, $('cLonM').value, $('cLonSec').value, +$('cLonW').value);
+    } else if (f === 'dms' && cur === 'dec') {
+      [['Lat', 'cLatS'], ['Lon', 'cLonW']].forEach(function (k) {
+        var raw = $('c' + k[0] + 'Dec').value; if (raw === '' || !isFinite(+raw)) return;
+        var r = splitDms(+raw);
+        $('c' + k[0] + 'D').value = r.d; $('c' + k[0] + 'M').value = r.m; $('c' + k[0] + 'Sec').value = r.sec; $(k[1]).value = r.neg;
+      });
+    }
+    locFmt = f; save('locFmt', f);
+    document.querySelectorAll('#locFmt button').forEach(function (b) { var on = b.dataset.fmt === f; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('#locForm .fdms').forEach(function (e) { e.hidden = f !== 'dms'; });
+    document.querySelectorAll('#locForm .fdec').forEach(function (e) { e.hidden = f !== 'dec'; });
+    $('locErr').textContent = '';
+  }
+  document.querySelectorAll('#locFmt button').forEach(function (b) { b.addEventListener('click', function () { setLocFmt(b.dataset.fmt); }); });
+
   function fillLocForm(p) {
     $('cName').value = p.name;
-    $('cLatD').value = p.latD; $('cLatM').value = p.latM; $('cLatS').value = p.latS ? 1 : 0;
-    $('cLonD').value = p.lonD; $('cLonM').value = p.lonM; $('cLonW').value = p.lonW ? 1 : 0;
+    $('cLatD').value = p.latD; $('cLatM').value = p.latM; $('cLatSec').value = p.latSec || 0; $('cLatS').value = p.latS ? 1 : 0;
+    $('cLonD').value = p.lonD; $('cLonM').value = p.lonM; $('cLonSec').value = p.lonSec || 0; $('cLonW').value = p.lonW ? 1 : 0;
+    $('cLatDec').value = decStr(p.latD, p.latM, p.latSec, p.latS); $('cLonDec').value = decStr(p.lonD, p.lonM, p.lonSec, p.lonW);
     $('cZoneNeg').value = p.zoneNeg ? 1 : 0; $('cZoneH').value = p.zoneH; $('cZoneM').value = p.zoneM;
     $('cDst').checked = !!p.dst; $('cDstBox').hidden = !p.dst;
     fillRule('Ds', p.dstStart || { month: 3, date: 0, num: 2, dow: 2 });
@@ -470,22 +501,35 @@
   function readLocForm() {
     var err = $('locErr');
     function n(id, lo, hi) { var v = Number($(id).value); return (isFinite(v) && $(id).value !== '' && v >= lo && v <= hi && v === Math.round(v)) ? v : null; }
+    function fail(t) { err.textContent = t; return null; }
     var name = $('cName').value.trim().slice(0, 60);
-    var latD = n('cLatD', 0, 89), latM = n('cLatM', 0, 59), lonD = n('cLonD', 0, 180), lonM = n('cLonM', 0, 59);
     var zH = n('cZoneH', 0, 14), zM = n('cZoneM', 0, 59);
-    if (!name) { err.textContent = 'Please give the place a name.'; return null; }
-    if (latD === null || latM === null) { err.textContent = 'Latitude must be 0–89° and 0–59′.'; return null; }
-    if (lonD === null || lonM === null || (lonD === 180 && lonM > 0)) { err.textContent = 'Longitude must be 0–180° and 0–59′.'; return null; }
-    if (zH === null || zM === null) { err.textContent = 'Time zone: hours 0–14, minutes 0–59.'; return null; }
+    var latD, latM, latSec = 0, latS, lonD, lonM, lonSec = 0, lonW;
+    if (!name) return fail('Please give the place a name.');
+    if (locFmt === 'dec') {
+      var la = $('cLatDec').value.trim(), lo = $('cLonDec').value.trim();
+      if (la === '' || !isFinite(+la) || Math.abs(+la) > 89.9999) return fail('Latitude must be a decimal number between −89.9999 and 89.9999 (south is negative).');
+      if (lo === '' || !isFinite(+lo) || Math.abs(+lo) > 180) return fail('Longitude must be a decimal number between −180 and 180 (west is negative).');
+      var a1 = splitDms(+la), b1 = splitDms(+lo);
+      latD = a1.d; latM = a1.m; latSec = a1.sec; latS = a1.neg; lonD = b1.d; lonM = b1.m; lonSec = b1.sec; lonW = b1.neg;
+    } else {
+      latD = n('cLatD', 0, 89); latM = n('cLatM', 0, 59); lonD = n('cLonD', 0, 180); lonM = n('cLonM', 0, 59);
+      latSec = Number($('cLatSec').value === '' ? 0 : $('cLatSec').value); lonSec = Number($('cLonSec').value === '' ? 0 : $('cLonSec').value);
+      if (latD === null || latM === null || !isFinite(latSec) || latSec < 0 || latSec >= 60) return fail('Latitude must be 0–89°, 0–59′ and 0–59.99″.');
+      if (lonD === null || lonM === null || !isFinite(lonSec) || lonSec < 0 || lonSec >= 60 || (lonD === 180 && (lonM > 0 || lonSec > 0))) return fail('Longitude must be 0–180°, 0–59′ and 0–59.99″.');
+      latSec = Math.round(latSec * 100) / 100; lonSec = Math.round(lonSec * 100) / 100;
+      latS = +$('cLatS').value; lonW = +$('cLonW').value;
+    }
+    if (zH === null || zM === null) return fail('Time zone: hours 0–14, minutes 0–59.');
     err.textContent = '';
     return {
-      name: name, latD: latD, latM: latM, latS: +$('cLatS').value, lonD: lonD, lonM: lonM, lonW: +$('cLonW').value,
+      name: name, latD: latD, latM: latM, latSec: latSec, latS: latS, lonD: lonD, lonM: lonM, lonSec: lonSec, lonW: lonW,
       zoneH: zH, zoneM: zM, zoneNeg: +$('cZoneNeg').value, dst: $('cDst').checked ? 1 : 0,
       dstStart: readRule('Ds'), dstEnd: readRule('De')
     };
   }
   function stripDerived(p) {
-    return { name: p.name, latD: p.latD, latM: p.latM, latS: p.latS ? 1 : 0, lonD: p.lonD, lonM: p.lonM, lonW: p.lonW ? 1 : 0,
+    return { name: p.name, latD: p.latD, latM: p.latM, latSec: p.latSec || 0, latS: p.latS ? 1 : 0, lonD: p.lonD, lonM: p.lonM, lonSec: p.lonSec || 0, lonW: p.lonW ? 1 : 0,
       zoneH: p.zoneH, zoneM: p.zoneM, zoneNeg: p.zoneNeg ? 1 : 0, dst: p.dst ? 1 : 0, dstStart: p.dstStart, dstEnd: p.dstEnd };
   }
 
@@ -521,13 +565,12 @@
     msg(o, 'Locating…');
     navigator.geolocation.getCurrentPosition(function (pos) {
       var la = pos.coords.latitude, lo = pos.coords.longitude;
-      function dm(v) { v = Math.abs(v); var d = Math.floor(v), m = Math.round((v - d) * 60); if (m === 60) { d++; m = 0; } return [d, m]; }
-      var a = dm(la), b = dm(lo);
+      var a = splitDms(la), b = splitDms(lo);
       var jan = new Date(now.getFullYear(), 0, 1).getTimezoneOffset(), jul = new Date(now.getFullYear(), 6, 1).getTimezoneOffset();
       var std = -Math.max(jan, jul) / 60;                  // standard (non-DST) offset in hours
       var dstSeen = jan !== jul;
       var p = {
-        name: 'My location', latD: Math.min(a[0], 89), latM: a[1], latS: la < 0 ? 1 : 0, lonD: Math.min(b[0], 180), lonM: b[1], lonW: lo < 0 ? 1 : 0,
+        name: 'My location', latD: Math.min(a.d, 89), latM: a.m, latSec: a.sec, latS: a.neg, lonD: Math.min(b.d, 180), lonM: b.m, lonSec: b.sec, lonW: b.neg,
         zoneH: Math.floor(Math.abs(std)), zoneM: Math.round((Math.abs(std) % 1) * 60), zoneNeg: std < 0 ? 1 : 0, dst: 0,
         dstStart: { month: 3, date: 0, num: 2, dow: 2 }, dstEnd: { month: 11, date: 0, num: 1, dow: 2 }
       };
@@ -745,7 +788,7 @@
     var h = M.X2H(today.y, today.m, today.d, loc.tz);
     $('cvHMonth').value = h.month; $('cvHDay').value = h.day; $('cvHYear').value = h.year;
     $('pHMonth').value = h.month; $('pHYear').value = h.year; $('nmMonth').value = h.month; $('nmYear').value = h.year;
-    fillOptions(); fillLocForm(savedPlace); renderPlaceList();
+    fillOptions(); fillLocForm(savedPlace); setLocFmt(locFmt); renderPlaceList();
     setLocation(savedPlace, false);
     setPrayerMode('day'); setQiblaMode('angle');
     var start = (location.hash || '').slice(1) || load('tab', 'prayer');

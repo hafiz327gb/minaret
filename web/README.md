@@ -43,3 +43,4 @@ from local moon-sighting announcements.
 - **Midday / Zuhr / Chasht**: *Midday* (نصف النہار) is solar noon; *Zuhr* is Midday + 5 minutes; *Chasht* (چاشت) is a quarter of the way from sunrise to midday.
 - **Prayer → Specific dates**: choose a start and end date; every day in between is shown, one table per month (up to three years), with CSV/Print/Copy like the other modes.
 - **Prayer → Ramazan 1448H**: Sehri/Iftar timetable for 2027 (starting 8 or 9 Feb, ending 9 Mar 2027): Sehri end = Fajr 18° − 2 min, Fajr azan = Fajr 15°, Iftar = sunset + 2 min; with the Urdu precaution note and CSV.
+- **Location → Manual coordinates**: two tabs, *DMS* (degrees, minutes and seconds) and *Decimal* (signed decimal degrees; south and west are negative). Switching converts the values; the choice is remembered.

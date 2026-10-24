@@ -41,7 +41,7 @@
   function idiv(a, b) { return Math.trunc(a / b); }          // VB "\"
   function fmod(a, b) { return a - fix(a / b) * b; }         // as in Moon.bas
   function deg2rad(d) { return d * RPD; }
-  function dm2deg(d, m) { return d + m / 60; }
+  function dm2deg(d, m, sec) { return d + m / 60 + (sec || 0) / 3600; }
   function dms2deg(d, m, s) { return d + m / 60 + s / 3600; }
   function hms2h(h, m, s) { return h + m / 60 + s / 3600; }
   function isLeap(y) { return (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 1 : 0; }
@@ -53,13 +53,13 @@
    * Adds derived radians/hours: lat, lon (east positive), tz (hours east of GMT).
    */
   function makeLocation(p) {
-    var lat = deg2rad(dm2deg(p.latD, p.latM)) * (p.latS ? -1 : 1);
-    var lon = deg2rad(dm2deg(p.lonD, p.lonM)) * (p.lonW ? -1 : 1);
+    var lat = deg2rad(dm2deg(p.latD, p.latM, p.latSec)) * (p.latS ? -1 : 1);     // latSec / lonSec (seconds of arc) are optional
+    var lon = deg2rad(dm2deg(p.lonD, p.lonM, p.lonSec)) * (p.lonW ? -1 : 1);
     var tz = (p.zoneH + p.zoneM / 60) * (p.zoneNeg ? -1 : 1);
     var loc = {
       name: p.name,
-      latD: p.latD, latM: p.latM, latS: p.latS ? 1 : 0,
-      lonD: p.lonD, lonM: p.lonM, lonW: p.lonW ? 1 : 0,
+      latD: p.latD, latM: p.latM, latSec: p.latSec || 0, latS: p.latS ? 1 : 0,
+      lonD: p.lonD, lonM: p.lonM, lonSec: p.lonSec || 0, lonW: p.lonW ? 1 : 0,
       zoneH: p.zoneH, zoneM: p.zoneM, zoneNeg: p.zoneNeg ? 1 : 0,
       dst: p.dst ? 1 : 0,
       dstStart: p.dstStart || { month: 3, date: 0, num: 2, dow: 2 },

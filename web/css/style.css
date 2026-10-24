@@ -208,3 +208,9 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 /* Urdu is larger now; keep compact controls from growing taller because of it (the glyphs may extend past the line box, nothing is clipped) */
 .offrow .ur, #tabs .ur, button .ur, .kv .ur, .coords .ur, .lt .ur, label .ur { line-height: 1.1; }
 .offrow > span { line-height: 1.2; }
+/* DMS / Decimal switch under "Manual coordinates" */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 0 0 .6rem; background: var(--surface); }
+.seg button { border: 0; border-radius: 0; min-height: 0; padding: .3rem .8rem; background: transparent; }
+.seg button + button { border-inline-start: 1px solid var(--line); }
+.seg button.on { background: var(--brand); color: var(--brand-ink); }
+.coords .row.fdms input[type=number] { min-width: 0; }

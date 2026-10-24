@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f5c4d">
 <title>Minaret – Prayer Times, Qibla &amp; Hijri Calendar</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 <header class="top">
@@ -145,20 +145,32 @@
 
     <article class="card coords">
       <h2>Manual coordinates <span class="ur">مینول کوآرڈینیٹس</span></h2>
-      <form id="locForm" autocomplete="off">
+      <form id="locForm" autocomplete="off" novalidate>
         <div class="grp"><span class="lt">Name <span class="ur">نام</span></span>
           <input id="cName" required maxlength="60" aria-label="Name"></div>
+        <div class="seg" id="locFmt" role="tablist" aria-label="Coordinate format">
+          <button type="button" role="tab" data-fmt="dms" class="on">DMS <span class="ur">ڈگری منٹ سیکنڈ</span></button>
+          <button type="button" role="tab" data-fmt="dec">Decimal <span class="ur">اعشاری</span></button>
+        </div>
         <div class="grp"><span class="lt">Latitude <span class="ur">عرض البلد</span></span>
-          <div class="row">
-            <input id="cLatD" type="number" min="0" max="89" required placeholder="degrees °" aria-label="Latitude degrees">
-            <input id="cLatM" type="number" min="0" max="59" value="0" required placeholder="minutes ′" aria-label="Latitude minutes">
+          <div class="row fdms">
+            <input id="cLatD" type="number" min="0" max="89" step="1" placeholder="deg °" aria-label="Latitude degrees">
+            <input id="cLatM" type="number" min="0" max="59" step="1" value="0" placeholder="min ′" aria-label="Latitude minutes">
+            <input id="cLatSec" type="number" min="0" max="59.99" step="any" value="0" placeholder="sec ″" aria-label="Latitude seconds">
             <select id="cLatS" aria-label="North or south"><option value="0">N</option><option value="1">S</option></select>
+          </div>
+          <div class="row fdec" hidden>
+            <input id="cLatDec" type="number" min="-89.9999" max="89.9999" step="any" placeholder="e.g. 24.8607  (south: −)" aria-label="Latitude in decimal degrees">
           </div></div>
         <div class="grp"><span class="lt">Longitude <span class="ur">طول البلد</span></span>
-          <div class="row">
-            <input id="cLonD" type="number" min="0" max="180" required placeholder="degrees °" aria-label="Longitude degrees">
-            <input id="cLonM" type="number" min="0" max="59" value="0" required placeholder="minutes ′" aria-label="Longitude minutes">
+          <div class="row fdms">
+            <input id="cLonD" type="number" min="0" max="180" step="1" placeholder="deg °" aria-label="Longitude degrees">
+            <input id="cLonM" type="number" min="0" max="59" step="1" value="0" placeholder="min ′" aria-label="Longitude minutes">
+            <input id="cLonSec" type="number" min="0" max="59.99" step="any" value="0" placeholder="sec ″" aria-label="Longitude seconds">
             <select id="cLonW" aria-label="East or west"><option value="0">E</option><option value="1">W</option></select>
+          </div>
+          <div class="row fdec" hidden>
+            <input id="cLonDec" type="number" min="-180" max="180" step="any" placeholder="e.g. 67.0011  (west: −)" aria-label="Longitude in decimal degrees">
           </div></div>
         <div class="grp"><span class="lt">Time zone, GMT <span class="ur">ٹائم زون</span></span>
           <div class="row">
@@ -296,9 +308,9 @@
   <span>Based on Minaret © 1987–1998 Kamal Abdali · Web version</span>
 </footer>
 
-<script src="data/gazetteer.js?v=9"></script>
-<script src="js/minaret-core.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="data/gazetteer.js?v=10"></script>
+<script src="js/minaret-core.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
 </body>
 </html>
