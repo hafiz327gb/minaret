@@ -73,9 +73,10 @@
   /** Default prayer-calculation settings (Fajr/Isha 15 deg, standard Asr). */
   function defaultSettings() {
     return {
-      asrHanafi: 0,
       fajrByDepr: 1, fajrDepr: 15, fajrInterval: 90,
       ishaByDepr: 1, ishaDepr: 15, ishaInterval: 90,
+      maghribDepr: 0,              // 0 = Maghrib at sunset; else sun this many degrees below the horizon
+      ishaRamadanInterval: 0,      // minutes after Maghrib during Ramadan (interval method); 0 = same as ishaInterval
       ishraqAlt: DEFAULT_ISHRAQ_ALT,
       asrMakruhAlt: DEFAULT_ASRMAKRUH_ALT,
       addHijriDate: 0, addQiblaTime: 0
@@ -196,7 +197,84 @@
   }
 
   // ------------------------------------------------------------ prayer times
-  var TIME_KEYS = ['fajr', 'shuruq', 'ishraq', 'zuhr', 'asr', 'asrMakruh', 'maghrib', 'isha'];
+  var TIME_KEYS = ['fajr', 'shuruq', 'ishraq', 'zuhr', 'asr', 'asr2', 'asrMakruh', 'maghrib', 'isha'];
+
+  /** Hijri month (1..12) on day-of-year `nday1` (1-based) of Gregorian year y, at the location's local midnight. */
+  function hijriMonthOfDay(y, nday1, loc) {
+    return augJD2H(augJulDay(y, 1, nday1, 0, 0), loc.tz).month;
+  }
+
+  // ------------------------------------------------- calculation methods
+  /**
+   * Calculation conventions in use in various countries and institutions (the table was
+   * supplied by the program's user).
+   * fajr / isha: sun's depression angle in degrees; ishaInterval: minutes after Maghrib
+   * (ishaRamadan: minutes during Ramadan); maghrib: if given, Maghrib is when the sun is
+   * that many degrees below the horizon instead of at sunset.  `abbr` is the short label.
+   */
+  var METHODS = [
+    { id: 'MWL', abbr: 'MWL', en: 'Muslim World League', ur: 'رابطۂ عالمِ اسلامی',
+      region: 'Europe, Far East, parts of US', regionUr: 'یورپ، مشرقِ بعید، امریکہ کے کچھ حصے', fajr: 18, isha: 17 },
+    { id: 'ISNA', abbr: 'ISNA', en: 'Islamic Society of North America', ur: 'اسلامک سوسائٹی آف نارتھ امریکہ',
+      region: 'North America (US and Canada)', regionUr: 'شمالی امریکہ (امریکہ اور کینیڈا)', fajr: 15, isha: 15 },
+    { id: 'Egypt', abbr: 'Egypt', en: 'Egyptian General Authority of Survey', ur: 'مصری جنرل اتھارٹی آف سروے',
+      region: 'Africa, Syria, Lebanon, Malaysia', regionUr: 'افریقہ، شام، لبنان، ملائیشیا', fajr: 19.5, isha: 17.5 },
+    { id: 'Makkah', abbr: 'Makkah', en: 'Umm al-Qura University, Makkah', ur: 'جامعہ ام القریٰ، مکہ مکرمہ',
+      region: 'Arabian Peninsula', regionUr: 'جزیرہ نمائے عرب', fajr: 18.5, ishaInterval: 90, ishaRamadan: 120 },
+    { id: 'Karachi', abbr: 'Karachi', en: 'University of Islamic Sciences, Karachi', ur: 'جامعہ علومِ اسلامیہ، کراچی',
+      region: 'Pakistan, Afghanistan, Bangladesh, India', regionUr: 'پاکستان، افغانستان، بنگلہ دیش، بھارت', fajr: 18, isha: 18 },
+    { id: 'JTR', abbr: 'JTR KHI', en: 'Jamia tur Rasheed, Karachi', ur: 'جامعۃ الرشید، کراچی',
+      region: 'Pakistan', regionUr: 'پاکستان', fajr: 15, isha: 15 },
+    { id: 'Tehran', abbr: 'Tehran', en: 'Institute of Geophysics, University of Tehran', ur: 'انسٹی ٹیوٹ آف جیوفزکس، جامعہ تہران',
+      region: 'Iran, some Shia communities', regionUr: 'ایران، بعض شیعہ برادریاں', fajr: 17.7, isha: 14, maghrib: 4.5 },
+    { id: 'Jafari', abbr: 'Jafari', en: 'Leva Research Institute, Qom', ur: 'لیوا ریسرچ انسٹی ٹیوٹ، قم',
+      region: 'Some Shia communities worldwide', regionUr: 'دنیا بھر کی بعض شیعہ برادریاں', fajr: 16, isha: 14, maghrib: 4 },
+    { id: 'France', abbr: 'France', en: 'Muslims of France', ur: 'فرانس کے مسلمان',
+      region: 'France region', regionUr: 'فرانس', fajr: 12, isha: 12 },
+    { id: 'Russia', abbr: 'Russia', en: 'Spiritual Administration of Muslims of Russia', ur: 'روس کی مسلم روحانی انتظامیہ',
+      region: 'Russia region', regionUr: 'روس', fajr: 16, isha: 15 },
+    { id: 'Singapore', abbr: 'Singapore', en: 'Islamic Religious Council of Singapore', ur: 'سنگاپور کی اسلامی مذہبی کونسل',
+      region: 'Singapore region', regionUr: 'سنگاپور', fajr: 20, isha: 18 }
+  ];
+
+  function methodById(id) {
+    for (var i = 0; i < METHODS.length; i++) if (METHODS[i].id === id) return METHODS[i];
+    return null;
+  }
+
+  /** Copy a method's parameters into the settings object (Asr, Ishraq, Asr Makruh and display options are untouched). */
+  function applyMethod(st, id) {
+    var m = methodById(id);
+    if (!m) return st;
+    st.fajrByDepr = 1; st.fajrAngles = [m.fajr]; st.fajrDepr = m.fajr;
+    if (m.ishaInterval) {
+      st.ishaByDepr = 0; st.ishaInterval = m.ishaInterval; st.ishaRamadanInterval = m.ishaRamadan || 0;
+    } else {
+      st.ishaByDepr = 1; st.ishaAngles = [m.isha]; st.ishaDepr = m.isha; st.ishaRamadanInterval = 0;
+    }
+    st.maghribDepr = m.maghrib || 0;
+    return st;
+  }
+
+  function methodMatches(st, m) {
+    var fa = angleList(st, 'fajr'), ia = angleList(st, 'isha');
+    if (!st.fajrByDepr || fa.length !== 1 || fa[0] !== m.fajr) return false;
+    if ((st.maghribDepr || 0) !== (m.maghrib || 0)) return false;
+    if (m.ishaInterval) return !st.ishaByDepr && st.ishaInterval === m.ishaInterval && (st.ishaRamadanInterval || 0) === (m.ishaRamadan || 0);
+    return !!st.ishaByDepr && ia.length === 1 && ia[0] === m.isha;
+  }
+
+  /**
+   * The id of the method whose parameters equal the settings, else 'custom'.
+   * Several methods share the same numbers (e.g. ISNA and JTR are both 15/15);
+   * `prefer` (an id) wins when it matches, otherwise the first match is returned.
+   */
+  function detectMethod(st, prefer) {
+    var pm = prefer && methodById(prefer);
+    if (pm && methodMatches(st, pm)) return pm.id;
+    for (var i = 0; i < METHODS.length; i++) if (methodMatches(st, METHODS[i])) return METHODS[i].id;
+    return 'custom';
+  }
 
   /**
    * The Fajr or Isha depression angles (degrees) chosen in the settings.
@@ -223,25 +301,27 @@
     var fa = st.fajrByDepr ? angleList(st, 'fajr') : [];
     var ia = st.ishaByDepr ? angleList(st, 'isha') : [];
     var t0 = {
-      shuruq: 6, asr: 15, maghrib: 18, ishraq: 6.5, makruh: 17.5,
+      shuruq: 6, asr: 15, asr2: 15.5, maghrib: 18, ishraq: 6.5, makruh: 17.5,
       fajrs: fa.map(function () { return 4; }), ishas: ia.map(function () { return 20; })
     };
     var coalt = {
       shuruq: deg2rad(90.83),
-      maghrib: deg2rad(90.83),
+      maghrib: deg2rad(st.maghribDepr > 0 ? 90 + st.maghribDepr : 90.83),
       ishraq: deg2rad(90 - st.ishraqAlt),
       makruh: deg2rad(90 - st.asrMakruhAlt),
       fajrs: fa.map(function (a) { return deg2rad(90 + a); }),
       ishas: ia.map(function (a) { return deg2rad(90 + a); })
     };
     var n = noontime(C, loc, first);
-    coalt.asr = Math.atan(1 + st.asrHanafi + Math.tan(n.coaltn));
+    coalt.asr = Math.atan(1 + Math.tan(n.coaltn));          // shadow = 1 x object + noon shadow
+    coalt.asr2 = Math.atan(2 + Math.tan(n.coaltn));         // shadow = 2 x object + noon shadow (Hanafi)
 
     function keep(v, def) { return v < 24 ? v : def; }
 
     // approximate times for the first day; later each day seeds the next
     t0.shuruq = keep(tempus(C, loc, first, coalt.shuruq, t0.shuruq, am), 5);
     t0.asr = keep(tempus(C, loc, first, coalt.asr, t0.asr, pm), 15);
+    t0.asr2 = keep(tempus(C, loc, first, coalt.asr2, t0.asr2, pm), 15.5);
     t0.maghrib = keep(tempus(C, loc, first, coalt.maghrib, t0.maghrib, pm), 21);
     t0.ishraq = keep(tempus(C, loc, first, coalt.ishraq, t0.ishraq, am), 6.5);
     t0.makruh = keep(tempus(C, loc, first, coalt.makruh, t0.makruh, pm), 17.5);
@@ -254,12 +334,15 @@
       var row = { fajrs: [], ishas: [] };
       n = noontime(C, loc, k + 1);
       row.zuhr = n.time;
-      coalt.asr = Math.atan(1 + st.asrHanafi + Math.tan(n.coaltn));
+      coalt.asr = Math.atan(1 + Math.tan(n.coaltn));
+      coalt.asr2 = Math.atan(2 + Math.tan(n.coaltn));
 
       t = tempus(C, loc, k + 1, coalt.shuruq, t0.shuruq, am);
       row.shuruq = t; t0.shuruq = keep(t, 5);
       t = tempus(C, loc, k + 1, coalt.asr, t0.asr, pm);
       row.asr = t; t0.asr = keep(t, 15);
+      t = tempus(C, loc, k + 1, coalt.asr2, t0.asr2, pm);
+      row.asr2 = t; t0.asr2 = keep(t, 15.5);
       t = tempus(C, loc, k + 1, coalt.maghrib, t0.maghrib, pm);
       row.maghrib = t; t0.maghrib = keep(t, 21);
       t = tempus(C, loc, k + 1, coalt.ishraq, t0.ishraq, am);
@@ -281,7 +364,9 @@
           row.ishas.push(t); t0.ishas[i] = keep(t, 23);
         }
       } else {
-        row.ishas.push(t0.maghrib + st.ishaInterval / 60);
+        var mins = st.ishaInterval;
+        if (st.ishaRamadanInterval > 0 && aYear !== 0 && hijriMonthOfDay(y, k + 1, loc) === 9) mins = st.ishaRamadanInterval;
+        row.ishas.push(t0.maghrib + mins / 60);
       }
       row.fajr = row.fajrs[0];
       row.isha = row.ishas[0];
@@ -680,6 +765,7 @@
     isLeap: isLeap, monthLength: monthLength,
     computeConstants: computeConstants, tempus: tempus, noontime: noontime,
     daylit: daylit, namedDay: namedDay,
+    METHODS: METHODS, methodById: methodById, applyMethod: applyMethod, detectMethod: detectMethod,
     angleList: angleList, compute: compute, daySchedule: daySchedule, monthSchedule: monthSchedule,
     yearSchedule: yearSchedule, hijriMonthSchedule: hijriMonthSchedule,
     qibla: qibla, qiblaAngle: qiblaAngle, qiblaDay: qiblaDay,

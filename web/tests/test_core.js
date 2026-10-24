@@ -69,7 +69,7 @@ for (const c of cities) {
     if (r.isha < 24) { near(alt('isha'), -st.ishaDepr, 0.12, tag + ' isha alt'); altChecked++; }
     altChecked += 4;
     // ordering
-    ok(r.shuruq < r.ishraq && r.ishraq < r.zuhr && r.zuhr < r.asr && r.asr < r.asrMakruh &&
+    ok(r.shuruq < r.ishraq && r.ishraq < r.zuhr && r.zuhr < r.asr && r.asr < r.asr2 && r.asr2 < r.asrMakruh &&
       r.asrMakruh < r.maghrib && r.maghrib < r.isha, tag + ' ordering');
     // asr: shadow length = object + noon shadow
     const noonAlt = sunAlt(y, m, d, r.zuhr, noDst.tz, latDeg(noDst), lonDeg(noDst));
@@ -80,13 +80,16 @@ for (const c of cities) {
 }
 console.log('sun-altitude checks:', altChecked);
 
-// Hanafi asr
+// Asr: both shadow ratios are always computed (1x and 2x object length)
 {
-  const loc = findLoc('Karachi'), s2 = Object.assign({}, st, { asrHanafi: 1 });
-  const r = M.daySchedule(22, 10, 2026, loc, s2).times;
-  const a = sunAlt(2026, 10, 22, r.asr, loc.tz, latDeg(loc), lonDeg(loc));
-  const n = sunAlt(2026, 10, 22, r.zuhr, loc.tz, latDeg(loc), lonDeg(loc));
-  near(1 / Math.tan(a * M.RPD), 2 + 1 / Math.tan(n * M.RPD), 0.03, 'asr shadow (hanafi)');
+  const loc = findLoc('Karachi');
+  for (const [y, m, d] of dates) {
+    const r = M.daySchedule(d, m, y, Object.assign({}, loc, { dst: 0 }), st).times, nl = Object.assign({}, loc, { dst: 0 });
+    const noonAlt = sunAlt(y, m, d, r.zuhr, nl.tz, latDeg(nl), lonDeg(nl)), cot = a => 1 / Math.tan(a * M.RPD);
+    near(cot(sunAlt(y, m, d, r.asr, nl.tz, latDeg(nl), lonDeg(nl))), 1 + cot(noonAlt), 0.03, `asr 1x ${y}-${m}-${d}`);
+    near(cot(sunAlt(y, m, d, r.asr2, nl.tz, latDeg(nl), lonDeg(nl))), 2 + cot(noonAlt), 0.03, `asr 2x ${y}-${m}-${d}`);
+    ok(r.asr < r.asr2 && r.asr2 < r.asrMakruh, `asr < asr2 < makruh ${y}-${m}-${d}`);
+  }
 }
 
 // custom altitudes are honoured
@@ -134,6 +137,42 @@ console.log('sun-altitude checks:', altChecked);
   // day vs month table agree for each angle
   const dd = M.daySchedule(14, 3, 2026, loc, s3).times, mm = M.monthSchedule(3, 2026, loc, s3).rows[13];
   dd.fajrs.forEach((v, i) => near(v, mm.fajrs[i], 0.01, 'day vs month fajr list ' + i));
+}
+
+// ---- 1c. calculation methods ----------------------------------------------
+{
+  ok(M.METHODS.length === 11, 'eleven methods');
+  const expect = { MWL: [18, 17], ISNA: [15, 15], Egypt: [19.5, 17.5], Karachi: [18, 18], JTR: [15, 15], Tehran: [17.7, 14], Jafari: [16, 14], France: [12, 12], Russia: [16, 15], Singapore: [20, 18] };
+  const loc = findLoc('Karachi'), noDst = Object.assign({}, loc, { dst: 0 });
+  for (const id of Object.keys(expect)) {
+    const s2 = M.applyMethod(Object.assign({}, st), id), r = M.daySchedule(22, 10, 2026, noDst, s2).times;
+    const [fa, ia] = expect[id], mg = (M.methodById(id).maghrib || 0);
+    near(sunAlt(2026, 10, 22, r.fajr, noDst.tz, latDeg(noDst), lonDeg(noDst)), -fa, 0.12, id + ' fajr angle');
+    near(sunAlt(2026, 10, 22, r.isha, noDst.tz, latDeg(noDst), lonDeg(noDst)), -ia, 0.12, id + ' isha angle');
+    near(sunAlt(2026, 10, 22, r.maghrib, noDst.tz, latDeg(noDst), lonDeg(noDst)), mg ? -mg : -0.83, 0.12, id + ' maghrib');
+    ok(M.detectMethod(s2, id) === id, 'detectMethod round trip ' + id);
+    ok(s2.fajrAngles.length === 1 && s2.fajrDepr === fa, id + ' settings');
+  }
+  ok(M.detectMethod(st) === 'ISNA' && M.detectMethod(st, 'JTR') === 'JTR', '15/15 matches ISNA, or JTR when preferred');
+  ok(M.detectMethod(Object.assign({}, st, { fajrAngles: [15, 18] })) === 'custom', 'two angles -> custom');
+  ok(M.detectMethod(Object.assign({}, st, { maghribDepr: 3 })) === 'custom', 'maghrib angle -> custom');
+  // Tehran/Jafari: Maghrib later than sunset by a few minutes, Isha interval follows Maghrib
+  const sunset = M.daySchedule(22, 10, 2026, noDst, st).times.maghrib, teh = M.daySchedule(22, 10, 2026, noDst, M.applyMethod(Object.assign({}, st), 'Tehran')).times.maghrib;
+  ok(teh - sunset > 0.1 && teh - sunset < 0.4, 'Tehran maghrib later than sunset: ' + (teh - sunset) * 60 + ' min');
+  // Umm al-Qura: Isha = Maghrib + 90 min, + 120 min during Ramadan
+  const mk = findLoc('Makkah'), ms = M.applyMethod(Object.assign({}, st), 'Makkah');
+  ok(ms.ishaByDepr === 0 && ms.ishaInterval === 90 && ms.ishaRamadanInterval === 120, 'Makkah settings');
+  const ram = M.hijriMonthSchedule(9, 1448, mk, ms).rows, sha = M.hijriMonthSchedule(8, 1448, mk, ms).rows;
+  ram.forEach((r, i) => near(r.isha - r.maghrib, 2, 1e-9, 'Ramadan day ' + (i + 1) + ' isha = maghrib + 120 min'));
+  sha.forEach((r, i) => near(r.isha - r.maghrib, 1.5, 1e-9, 'Sha`ban day ' + (i + 1) + ' isha = maghrib + 90 min'));
+  near(ram[0].fajr, ram[0].fajrs[0], 0, 'fajr list');
+  const mo = M.monthSchedule(2, 2027, mk, ms).rows;                       // Ramadan 1448 starts about 8 Feb 2027
+  ok(mo.some(r => Math.abs(r.isha - r.maghrib - 2) < 1e-9) && mo.some(r => Math.abs(r.isha - r.maghrib - 1.5) < 1e-9), 'Feb 2027 mixes 90 and 120 min');
+  const per = M.yearSchedule(0, mk, ms);
+  ok(per.every(m => m.rows.every(r => Math.abs(r.isha - r.maghrib - 1.5) < 1e-9)), 'perpetual schedule uses the plain 90 min');
+  // fixed-date DST rule (Syria) is understood by daylit()
+  const al = findLoc('Aleppo'), dl = M.daylit(2026, al);
+  ok(al.dstStart.date > 0 && dl.b1 > 60 && dl.e1 > dl.b1, 'Aleppo fixed-date DST: ' + JSON.stringify(dl));
 }
 
 // ---- 2. schedules ----------------------------------------------------------

@@ -17,12 +17,9 @@
   // --------------------------------------------------------------- state
   var customPlaces = load('custom', []);
   var places = [];                      // gazetteer + custom, sorted by name
-  var settings = Object.assign(M.defaultSettings(), {
-    asrHanafi: GAZ.defaults.asrHanafi,
-    fajrByDepr: GAZ.defaults.fajrByDepr, fajrDepr: GAZ.defaults.fajrDepr, fajrInterval: GAZ.defaults.fajrInterval,
-    ishaByDepr: GAZ.defaults.ishaByDepr, ishaDepr: GAZ.defaults.ishaDepr, ishaInterval: GAZ.defaults.ishaInterval,
-    use24: 0
-  }, load('settings', {}));
+  var DEFAULT_METHOD = 'JTR';          // Jamia tur Rasheed, Karachi (15 / 15), the original program's defaults
+  var saved = load('settings', null);
+  var settings = Object.assign(M.defaultSettings(), { use24: 0 }, saved || {});
   function ensureAngles(s) {
     ['fajr', 'isha'].forEach(function (w) {
       var a = s[w + 'Angles'];
@@ -31,6 +28,8 @@
     });
   }
   ensureAngles(settings);
+  if (!saved) { M.applyMethod(settings, DEFAULT_METHOD); settings.method = DEFAULT_METHOD; }
+  else settings.method = M.detectMethod(settings, settings.method || DEFAULT_METHOD);   // settings saved by older versions
   var loc;
   var now = new Date();
   var today = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
@@ -70,10 +69,14 @@
     if (y === 1582 && m === 10 && d > 4 && d < 15) return false;
     return true;
   }
+  function methodLabel() {
+    var m = M.methodById(settings.method);
+    return m ? m.abbr : 'Custom';
+  }
   function locMeta(l) {
     var q = M.qiblaAngle(l);
     return esc(l.name) + ' — Latitude ' + fmtLat(l) + ', Longitude ' + fmtLon(l) + ', GMT' + fmtZone(l) +
-      ', Qibla ' + q.deg + '°' + pad2(q.min) + '′ ' + (q.east ? 'E' : 'W') + ' of north';
+      ', Qibla ' + q.deg + '°' + pad2(q.min) + '′ ' + (q.east ? 'E' : 'W') + ' of north · Method: ' + esc(methodLabel());
   }
 
   // ------------------------------------------------------------- tabs
@@ -105,9 +108,10 @@
     one('shuruq', 'Shuruq', 'طلوع', 'Sunrise');
     one('ishraq', 'Ishraq', 'اشراق', '+' + st.ishraqAlt + '°', 1);
     one('zuhr', 'Zuhr', 'ظہر', 'Noon');
-    one('asr', 'Asr', 'عصر', 'Afternoon');
+    one('asr', 'Asr 1×', 'عصر (مثلِ اول)', 'Shafi‘i');
+    one('asr2', 'Asr 2×', 'عصر (مثلِ ثانی)', 'Hanafi');
     one('asrMakruh', 'Asr Makruh', 'عصر مکروہ', '+' + st.asrMakruhAlt + '°', 1);
-    one('maghrib', 'Maghrib', 'مغرب', 'Sunset');
+    one('maghrib', 'Maghrib', 'مغرب', st.maghribDepr > 0 ? 'sun −' + st.maghribDepr + '°' : 'Sunset');
     angleCols('isha', 'Isha', 'عشاء', 'Night');
     return cols;
   }
@@ -154,7 +158,8 @@
         ' · ' + h.day + ' ' + M.HIJRI_MONTH[h.month - 1] + ' ' + h.year + ' H</h2><p class="meta">' + locMeta(loc) + '</p></div><div class="daycards">';
       columns().forEach(function (c) {
         var note = c.id === 'ishraq' ? 'sun ' + st.ishraqAlt + '° above horizon'
-          : c.id === 'asrMakruh' ? 'sun ' + st.asrMakruhAlt + '° above horizon · till Maghrib' : c.sub;
+          : c.id === 'asrMakruh' ? 'sun ' + st.asrMakruhAlt + '° above horizon · till Maghrib'
+          : c.id === 'asr' ? 'shadow 1× · Shafi‘i, Maliki, Hanbali' : c.id === 'asr2' ? 'shadow 2× · Hanafi' : c.sub;
         var v = c.get(r.times);
         html += '<div class="dc' + (c.extra ? ' xt' : '') + '"><div class="n"><span>' + c.en + '</span><span class="ur">' + c.ur + '</span></div>' +
           '<div class="t">' + (settings.use24 ? M.formatTime24(v) : T12(v)) + '</div><div class="d">' + note + '</div></div>';
@@ -351,38 +356,109 @@
   });
 
   // ===================================================== LOCATION TAB
-  function renderPlaceList() {
-    var q = $('locSearch').value.trim().toLowerCase(), sel = $('locList');
-    var list = places.filter(function (p) { return !q || p.name.toLowerCase().indexOf(q) >= 0; });
-    sel.innerHTML = list.slice(0, 800).map(function (p) {
-      return '<option value="' + places.indexOf(p) + '"' + (loc && p.name === loc.name ? ' selected' : '') + '>' + esc(p.name) + '</option>';
-    }).join('');
-    $('locCount').textContent = list.length + (q ? ' matching of ' + places.length : '');
+  var NUMS = [['0', 'last'], ['1', '1st'], ['2', '2nd'], ['3', '3rd'], ['4', '4th'], ['D', 'on date']];
+  var DOWS = [['0', 'Fri'], ['1', 'Sat'], ['2', 'Sun'], ['3', 'Mon'], ['4', 'Tue'], ['5', 'Wed'], ['6', 'Thu']];
+
+  function setOptions(sel, items, val) {
+    sel.innerHTML = items.map(function (it) { return '<option value="' + it[0] + '">' + it[1] + '</option>'; }).join('');
+    sel.value = String(val);
   }
+  function isCustom(p) { return customPlaces.some(function (c) { return c.name === p.name; }); }
+  function samePlace(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+
+  function renderPlaceList() {
+    var q = $('locSearch').value.trim().toLowerCase(), sel = $('locList'), n = 0, h = '';
+    places.forEach(function (p, i) {
+      if (q && p.name.toLowerCase().indexOf(q) < 0) return;
+      n++;
+      h += '<option value="' + i + '"' + (loc && p.name === loc.name ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    });
+    sel.innerHTML = h;
+    $('locCount').textContent = n + (q ? ' matching of ' + places.length : '');
+    var chosen = sel.querySelector('option:checked');
+    if (chosen && chosen.scrollIntoView && !q) chosen.scrollIntoView({ block: 'nearest' });
+  }
+
+  function dstRuleUi(pre) {
+    var byDate = $('c' + pre + 'Num').value === 'D';
+    $('c' + pre + 'Dow').hidden = byDate; $('c' + pre + 'Date').hidden = !byDate;
+  }
+  function fillRule(pre, r) {
+    var byDate = r.date > 0;
+    $('c' + pre + 'Num').value = byDate ? 'D' : String(r.num);
+    $('c' + pre + 'Dow').value = String(r.dow);
+    $('c' + pre + 'Date').value = byDate ? r.date : 1;
+    $('c' + pre + 'Mon').value = String(r.month);
+    dstRuleUi(pre);
+  }
+  function readRule(pre) {
+    var n = $('c' + pre + 'Num').value, month = +$('c' + pre + 'Mon').value;
+    if (n === 'D') return { month: month, date: Math.max(1, Math.min(31, Math.round(+$('c' + pre + 'Date').value || 1))), num: 0, dow: 0 };
+    return { month: month, date: 0, num: +n, dow: +$('c' + pre + 'Dow').value };
+  }
+
+  /** Show a place's details in the manual-coordinates form. */
+  function fillLocForm(p) {
+    $('cName').value = p.name;
+    $('cLatD').value = p.latD; $('cLatM').value = p.latM; $('cLatS').value = p.latS ? 1 : 0;
+    $('cLonD').value = p.lonD; $('cLonM').value = p.lonM; $('cLonW').value = p.lonW ? 1 : 0;
+    $('cZoneNeg').value = p.zoneNeg ? 1 : 0; $('cZoneH').value = p.zoneH; $('cZoneM').value = p.zoneM;
+    $('cDst').checked = !!p.dst; $('cDstBox').hidden = !p.dst;
+    fillRule('Ds', p.dstStart || { month: 3, date: 0, num: 2, dow: 2 });
+    fillRule('De', p.dstEnd || { month: 11, date: 0, num: 1, dow: 2 });
+    $('locErr').textContent = '';
+    $('locDel').hidden = !isCustom(p);
+  }
+
+  /** Read and validate the form; returns a place or null (and shows why). */
+  function readLocForm() {
+    var err = $('locErr');
+    function n(id, lo, hi) { var v = Number($(id).value); return (isFinite(v) && $(id).value !== '' && v >= lo && v <= hi && v === Math.round(v)) ? v : null; }
+    var name = $('cName').value.trim().slice(0, 29);
+    var latD = n('cLatD', 0, 89), latM = n('cLatM', 0, 59), lonD = n('cLonD', 0, 180), lonM = n('cLonM', 0, 59);
+    var zH = n('cZoneH', 0, 14), zM = n('cZoneM', 0, 59);
+    if (!name) { err.textContent = 'Please give the place a name.'; return null; }
+    if (latD === null || latM === null) { err.textContent = 'Latitude must be 0–89° and 0–59′.'; return null; }
+    if (lonD === null || lonM === null || (lonD === 180 && lonM > 0)) { err.textContent = 'Longitude must be 0–180° and 0–59′.'; return null; }
+    if (zH === null || zM === null) { err.textContent = 'Time zone: hours 0–14, minutes 0–59.'; return null; }
+    err.textContent = '';
+    return {
+      name: name, latD: latD, latM: latM, latS: +$('cLatS').value, lonD: lonD, lonM: lonM, lonW: +$('cLonW').value,
+      zoneH: zH, zoneM: zM, zoneNeg: +$('cZoneNeg').value, dst: $('cDst').checked ? 1 : 0,
+      dstStart: readRule('Ds'), dstEnd: readRule('De')
+    };
+  }
+  function stripDerived(p) {
+    return { name: p.name, latD: p.latD, latM: p.latM, latS: p.latS ? 1 : 0, lonD: p.lonD, lonM: p.lonM, lonW: p.lonW ? 1 : 0,
+      zoneH: p.zoneH, zoneM: p.zoneM, zoneNeg: p.zoneNeg ? 1 : 0, dst: p.dst ? 1 : 0, dstStart: p.dstStart, dstEnd: p.dstEnd };
+  }
+
+  /** Use a place that came from the form: gazetteer places stay as they are, edited ones are kept as "mine". */
+  function useFormPlace(p) {
+    var gz = places.filter(function (x) { return x.name === p.name && !isCustom(x); })[0];
+    if (gz && samePlace(stripDerived(gz), p)) { setLocation(gz); fillLocForm(gz); renderPlaceList(); return; }
+    if (gz) p.name = (p.name.slice(0, 21) + ' (mine)').slice(0, 29);        // do not shadow a gazetteer name
+    customPlaces = customPlaces.filter(function (c) { return c.name !== p.name; }).concat([p]);
+    save('custom', customPlaces); rebuildPlaces(); setLocation(p); fillLocForm(p); renderPlaceList();
+  }
+
   $('locSearch').addEventListener('input', renderPlaceList);
   $('locList').addEventListener('change', function () {
-    var p = places[+$('locList').value]; if (p) setLocation(p);
+    var p = places[+$('locList').value];
+    if (p) { setLocation(p); fillLocForm(p); }
   });
-
-  var NUMS = ['last', '1st', '2nd', '3rd', '4th'], DOWS = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'];
-  function opts(sel, arr, start, val) {
-    sel.innerHTML = arr.map(function (n, i) { return '<option value="' + (i + start) + '">' + n + '</option>'; }).join('');
-    sel.value = val;
-  }
   $('cDst').addEventListener('change', function () { $('cDstBox').hidden = !$('cDst').checked; });
+  ['Ds', 'De'].forEach(function (pre) { $('c' + pre + 'Num').addEventListener('change', function () { dstRuleUi(pre); }); });
   $('locForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    var p = {
-      name: $('cName').value.trim().slice(0, 29), latD: +$('cLatD').value, latM: +$('cLatM').value, latS: +$('cLatS').value,
-      lonD: +$('cLonD').value, lonM: +$('cLonM').value, lonW: +$('cLonW').value,
-      zoneH: +$('cZoneH').value, zoneM: +$('cZoneM').value, zoneNeg: +$('cZoneNeg').value, dst: $('cDst').checked ? 1 : 0,
-      dstStart: { month: +$('cDsMon').value, date: 0, num: +$('cDsNum').value, dow: +$('cDsDow').value },
-      dstEnd: { month: +$('cDeMon').value, date: 0, num: +$('cDeNum').value, dow: +$('cDeDow').value }
-    };
-    if (!p.name || p.latD > 90 || p.lonD > 180) return;
-    customPlaces = customPlaces.filter(function (c) { return c.name !== p.name; }).concat([p]);
-    save('custom', customPlaces); rebuildPlaces(); setLocation(p); renderPlaceList();
+    var p = readLocForm(); if (p) useFormPlace(p);
   });
+  $('locDel').addEventListener('click', function () {
+    customPlaces = customPlaces.filter(function (c) { return c.name !== loc.name; });
+    save('custom', customPlaces); rebuildPlaces();
+    setLocation(GAZ.current); fillLocForm(GAZ.current); renderPlaceList();
+  });
+
   $('geoBtn').addEventListener('click', function () {
     var o = $('geoOut');
     if (!navigator.geolocation) return msg(o, 'This browser cannot provide your position.', true);
@@ -393,26 +469,68 @@
       var a = dm(la), b = dm(lo);
       var jan = new Date(now.getFullYear(), 0, 1).getTimezoneOffset(), jul = new Date(now.getFullYear(), 6, 1).getTimezoneOffset();
       var std = -Math.max(jan, jul) / 60;                  // standard (non-DST) offset in hours
-      $('cName').value = 'My location'; $('cLatD').value = a[0]; $('cLatM').value = a[1]; $('cLatS').value = la < 0 ? 1 : 0;
-      $('cLonD').value = b[0]; $('cLonM').value = b[1]; $('cLonW').value = lo < 0 ? 1 : 0;
-      $('cZoneNeg').value = std < 0 ? 1 : 0; $('cZoneH').value = Math.floor(Math.abs(std)); $('cZoneM').value = Math.round((Math.abs(std) % 1) * 60);
-      $('cDst').checked = jan !== jul; $('cDstBox').hidden = jan === jul;
-      msg(o, 'Position filled in the form: ' + la.toFixed(4) + ', ' + lo.toFixed(4) + '. Check the time zone, then press “Use this location”.' +
-        (jan !== jul ? ' Your device observes daylight saving; set its start and end rule.' : ''));
+      var dstSeen = jan !== jul;
+      var p = {
+        name: 'My location', latD: Math.min(a[0], 89), latM: a[1], latS: la < 0 ? 1 : 0, lonD: Math.min(b[0], 180), lonM: b[1], lonW: lo < 0 ? 1 : 0,
+        zoneH: Math.floor(Math.abs(std)), zoneM: Math.round((Math.abs(std) % 1) * 60), zoneNeg: std < 0 ? 1 : 0, dst: 0,
+        dstStart: { month: 3, date: 0, num: 2, dow: 2 }, dstEnd: { month: 11, date: 0, num: 1, dow: 2 }
+      };
+      fillLocForm(p);
+      if (dstSeen) {
+        $('cDst').checked = true; $('cDstBox').hidden = false;
+        msg(o, 'Position filled in at right (' + la.toFixed(4) + ', ' + lo.toFixed(4) + '). Your device observes daylight saving time – set its start and end rule, then press “Use this location”.');
+      } else {
+        useFormPlace(p);
+        msg(o, 'Using your position: ' + la.toFixed(4) + ', ' + lo.toFixed(4) + '.');
+      }
     }, function (err) { msg(o, 'Could not get your position (' + err.message + ').', true); }, { enableHighAccuracy: false, timeout: 15000 });
   });
 
   // ======================================================= OPTIONS TAB
-  function fillOptions() {
-    var s = settings;
+  function methodsHtml() {
+    return M.METHODS.map(function (m) { return '<option value="' + m.id + '">' + esc(m.en) + ' (' + esc(m.abbr) + ')</option>'; }).join('') +
+      '<option value="custom">Custom — set every angle yourself / اپنی مرضی کا</option>';
+  }
+  function fmtDeg(v) { return v + '°'; }
+  function methodSummary(st, id) {
+    var m = M.methodById(id), rows = [];
+    function kv(k, ku, v) { rows.push('<dt>' + k + ' <span class="ur">' + ku + '</span></dt><dd>' + v + '</dd>'); }
+    if (m) { kv('Method', 'طریقہ', esc(m.en) + ' <span class="ur">' + m.ur + '</span>'); kv('Region', 'علاقہ', esc(m.region) + ' <span class="ur">' + m.regionUr + '</span>'); }
+    kv('Fajr', 'فجر', st.fajrByDepr ? st.fajrAngles.map(fmtDeg).join(', ') + ' below horizon' : st.fajrInterval + ' min before sunrise');
+    kv('Maghrib', 'مغرب', st.maghribDepr > 0 ? 'sun ' + fmtDeg(st.maghribDepr) + ' below horizon' : 'at sunset');
+    kv('Isha', 'عشاء', st.ishaByDepr ? st.ishaAngles.map(fmtDeg).join(', ') + ' below horizon'
+      : st.ishaInterval + ' min after Maghrib' + (st.ishaRamadanInterval > 0 ? ' (' + st.ishaRamadanInterval + ' min in Ramadan)' : ''));
+    $('methodInfo').innerHTML = rows.join('');
+  }
+  function fillCustom(s) {
     document.querySelector('input[name=fajrBy][value="' + (s.fajrByDepr ? 1 : 0) + '"]').checked = true;
     document.querySelector('input[name=ishaBy][value="' + (s.ishaByDepr ? 1 : 0) + '"]').checked = true;
-    document.querySelector('input[name=asrBy][value="' + (s.asrHanafi ? 1 : 0) + '"]').checked = true;
+    document.querySelector('input[name=magBy][value="' + (s.maghribDepr > 0 ? 1 : 0) + '"]').checked = true;
     $('oFajrDepr').value = s.fajrAngles.join(', '); $('oFajrInt').value = s.fajrInterval;
     $('oIshaDepr').value = s.ishaAngles.join(', '); $('oIshaInt').value = s.ishaInterval;
+    $('oIshaRam').value = s.ishaRamadanInterval || 0;
+    $('oMagDepr').value = s.maghribDepr > 0 ? s.maghribDepr : 4;
+  }
+  function fillOptions() {
+    var s = settings;
+    $('oMethod').value = s.method;
+    fillCustom(s); showMethod(s.method, s);
     $('oIshraq').value = s.ishraqAlt; $('oMakruh').value = s.asrMakruhAlt;
     $('oHijri').checked = !!s.addHijriDate; $('oQibla').checked = !!s.addQiblaTime; $('o24').checked = !!s.use24;
+    $('optErr').textContent = '';
   }
+  /** Show the summary (presets) or the editable fields (custom). */
+  function showMethod(id, st) {
+    $('customBox').hidden = id !== 'custom';
+    $('methodInfo').hidden = id === 'custom';
+    if (id !== 'custom') methodSummary(st, id);
+  }
+  $('oMethod').addEventListener('change', function () {
+    var id = $('oMethod').value, tmp = Object.assign({}, settings);
+    if (id !== 'custom') { M.applyMethod(tmp, id); fillCustom(tmp); }      // so “Custom” starts from this method
+    showMethod(id, tmp);
+  });
+
   /** "15, 18" -> [15, 18]; null if empty, malformed, out of 6..24, or more than 4 values. */
   function parseAngles(text) {
     var parts = String(text).replace(/[،;]/g, ',').split(/[,\s]+/).filter(Boolean), out = [];
@@ -425,30 +543,44 @@
     }
     return out;
   }
-  function num(id, lo, hi, def) { var v = +$(id).value; return (isFinite(v) && v >= lo && v <= hi) ? v : def; }
+  function numIn(id, lo, hi) { var t = $(id).value.trim(), v = Number(t); return (t !== '' && isFinite(v) && v >= lo && v <= hi) ? v : null; }
+  function optFail(msgText, focusId) { $('optErr').textContent = msgText; if (focusId) $(focusId).focus(); }
+
   $('optForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    var s = settings;
-    s.fajrByDepr = +document.querySelector('input[name=fajrBy]:checked').value;
-    s.ishaByDepr = +document.querySelector('input[name=ishaBy]:checked').value;
-    s.asrHanafi = +document.querySelector('input[name=asrBy]:checked').value;
-    var fa = parseAngles($('oFajrDepr').value), ia = parseAngles($('oIshaDepr').value), err = $('optErr');
-    if (!fa || !ia) {
-      err.textContent = 'Angles must be numbers between 6 and 24, separated by commas (at most 4), e.g. 15, 18.';
-      (!fa ? $('oFajrDepr') : $('oIshaDepr')).focus();
-      return;
+    var s = Object.assign({}, settings), id = $('oMethod').value;
+    var ish = numIn('oIshraq', 0.1, 10), mak = numIn('oMakruh', 0.1, 10);
+    if (ish === null) return optFail('Ishraq altitude must be between 0.1° and 10°.', 'oIshraq');
+    if (mak === null) return optFail('Asr Makruh altitude must be between 0.1° and 10°.', 'oMakruh');
+    if (id !== 'custom') {
+      M.applyMethod(s, id);
+    } else {
+      var byF = document.querySelector('input[name=fajrBy]:checked').value === '1';
+      var byI = document.querySelector('input[name=ishaBy]:checked').value === '1';
+      var byM = document.querySelector('input[name=magBy]:checked').value === '1';
+      if (byF) { var fa = parseAngles($('oFajrDepr').value); if (!fa) return optFail('Fajr angles must be numbers between 6 and 24, separated by commas (at most 4), e.g. 15, 18.', 'oFajrDepr'); s.fajrAngles = fa; }
+      else { var fi = numIn('oFajrInt', 20, 120); if (fi === null) return optFail('Fajr interval must be between 20 and 120 minutes.', 'oFajrInt'); s.fajrInterval = Math.round(fi); }
+      if (byI) { var ia = parseAngles($('oIshaDepr').value); if (!ia) return optFail('Isha angles must be numbers between 6 and 24, separated by commas (at most 4), e.g. 15, 18.', 'oIshaDepr'); s.ishaAngles = ia; s.ishaRamadanInterval = 0; }
+      else {
+        var ii = numIn('oIshaInt', 20, 120), ir = numIn('oIshaRam', 0, 180);
+        if (ii === null) return optFail('Isha interval must be between 20 and 120 minutes.', 'oIshaInt');
+        if (ir === null || (ir > 0 && ir < 20)) return optFail('Ramadan interval must be 0 (same) or between 20 and 180 minutes.', 'oIshaRam');
+        s.ishaInterval = Math.round(ii); s.ishaRamadanInterval = Math.round(ir);
+      }
+      var md = 0;
+      if (byM) { md = numIn('oMagDepr', 0.1, 8); if (md === null) return optFail('Maghrib angle must be between 0.1° and 8°.', 'oMagDepr'); }
+      s.fajrByDepr = byF ? 1 : 0; s.ishaByDepr = byI ? 1 : 0; s.maghribDepr = md;
+      ensureAngles(s);
     }
-    err.textContent = '';
-    s.fajrAngles = fa; s.ishaAngles = ia; ensureAngles(s);
-    s.fajrInterval = Math.round(num('oFajrInt', 20, 120, s.fajrInterval));
-    s.ishaInterval = Math.round(num('oIshaInt', 20, 120, s.ishaInterval));
-    s.ishraqAlt = num('oIshraq', 0.1, 10, 1.4); s.asrMakruhAlt = num('oMakruh', 0.1, 10, 2.3);
+    s.ishraqAlt = ish; s.asrMakruhAlt = mak;
     s.addHijriDate = $('oHijri').checked ? 1 : 0; s.addQiblaTime = $('oQibla').checked ? 1 : 0; s.use24 = $('o24').checked ? 1 : 0;
-    save('settings', s); fillOptions(); renderCurrent(); showTab('prayer');
+    s.method = id;
+    settings = s; save('settings', settings); fillOptions(); renderCurrent(); showTab('prayer');
   });
   $('oReset').addEventListener('click', function () {
-    settings = Object.assign(M.defaultSettings(), { use24: 0 }); ensureAngles(settings); save('settings', settings);
-    $('optErr').textContent = ''; fillOptions(); renderCurrent();
+    settings = Object.assign(M.defaultSettings(), { use24: 0 }); ensureAngles(settings);
+    M.applyMethod(settings, DEFAULT_METHOD); settings.method = DEFAULT_METHOD;
+    save('settings', settings); fillOptions(); renderCurrent();
   });
 
   // ============================================================== init
@@ -463,16 +595,20 @@
     $('pDate').value = iso(today.y, today.m, today.d); $('qDate').value = iso(today.y, today.m, today.d);
     $('cvDate').value = iso(today.y, today.m, today.d);
     $('maDate').value = iso(today.y, today.m, today.d); $('maTime').value = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
-    opts($('cDsNum'), NUMS, 0, 2); opts($('cDsDow'), DOWS, 0, 2); opts($('cDsMon'), months, 1, 3);
-    opts($('cDeNum'), NUMS, 0, 1); opts($('cDeDow'), DOWS, 0, 2); opts($('cDeMon'), months, 1, 11);
+    ['Ds', 'De'].forEach(function (pre) {
+      setOptions($('c' + pre + 'Num'), NUMS, pre === 'Ds' ? 2 : 1);
+      setOptions($('c' + pre + 'Dow'), DOWS, 2);
+      setOptions($('c' + pre + 'Mon'), months.map(function (n, i) { return [String(i + 1), n]; }), pre === 'Ds' ? 3 : 11);
+    });
+    $('oMethod').innerHTML = methodsHtml();
 
-    var saved = load('place', null) || GAZ.current;
-    loc = M.makeLocation(saved);
+    var savedPlace = load('place', null) || GAZ.current;
+    loc = M.makeLocation(savedPlace);
     var h = M.X2H(today.y, today.m, today.d, loc.tz);
     $('cvHMonth').value = h.month; $('cvHDay').value = h.day; $('cvHYear').value = h.year;
     $('pHMonth').value = h.month; $('pHYear').value = h.year; $('nmMonth').value = h.month; $('nmYear').value = h.year;
-    fillOptions(); renderPlaceList();
-    setLocation(saved, false);
+    fillOptions(); fillLocForm(savedPlace); renderPlaceList();
+    setLocation(savedPlace, false);
     setPrayerMode('day'); setQiblaMode('angle');
     var start = (location.hash || '').slice(1) || load('tab', 'prayer');
     showTab(document.getElementById('tab-' + start) ? start : 'prayer');

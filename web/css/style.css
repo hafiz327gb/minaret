@@ -32,7 +32,7 @@ body { margin: 0; background: var(--bg); color: var(--ink);
 
 main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
 .panel { display: none; } .panel.on { display: block; }
-footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 1.5rem 1rem 2rem; }
+footer { text-align: center; color: var(--muted); font-size: .8rem; padding: .4rem 1rem .6rem; }
 
 .modes { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .8rem; }
 .modes button { border: 1px solid var(--line); background: var(--surface); color: var(--ink);
@@ -109,6 +109,47 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .compass .tick, .compass .lbl { fill: var(--muted); font-size: 11px; }
 .compass .needle { stroke: var(--brand); stroke-width: 3; }
 .compass .kaaba { fill: var(--accent); }
+
+/* ---- Location tab: list at left, coordinates at right, all on one screen ---- */
+.locgrid { display: grid; gap: 1rem; align-items: start;
+  grid-template-columns: minmax(16rem, 1fr) minmax(22rem, 1.25fr);
+  grid-template-areas: "gaz coords" "geo coords"; }
+.locgrid .gaz { grid-area: gaz; } .locgrid .coords { grid-area: coords; } .locgrid .geo { grid-area: geo; }
+@media (max-width: 52rem) { .locgrid { grid-template-columns: 1fr; grid-template-areas: "gaz" "coords" "geo"; } }
+.locgrid .card { padding: .8rem 1rem; }
+.locgrid h2, .optgrid h2 { margin-bottom: .5rem; }
+.grp { display: flex; flex-direction: column; gap: .2rem; margin-bottom: .5rem; }
+.lt { font-size: .85rem; color: var(--muted); }
+.coords .row { flex-wrap: nowrap; align-items: stretch; }
+.coords .row input, .coords .row select { flex: 1 1 0; min-width: 0; width: 100%; }
+.coords .row select { flex: 0 0 4.6rem; width: 4.6rem; }
+.coords .grp > input { width: 100%; }
+.coords .chk { margin: .1rem 0 .4rem; }
+.coords .err { min-height: 0; margin: .2rem 0 .4rem; }
+#locList { height: 14.5rem; }
+.rule { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.rule b { min-width: 3.4rem; }
+.rule input[type=number] { width: 4rem; }
+.rule select { max-width: 8rem; }
+.dst { display: grid; gap: .4rem; margin: .2rem 0 .6rem; }
+.dst .hint { margin: 0; }
+[hidden] { display: none !important; }
+.geo .result { min-height: 0; font-size: .95rem; }
+
+/* ---- Options tab ---- */
+.optgrid { display: grid; gap: 1rem; align-items: start; grid-template-columns: minmax(0, 2.2fr) minmax(16rem, 1fr); }
+@media (max-width: 62rem) { .optgrid { grid-template-columns: 1fr; } }
+.optgrid .wide { grid-column: 1 / -1; }
+.optgrid .card { padding: .8rem 1rem; }
+#oMethod { width: 100%; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .9rem; margin: .7rem 0 .4rem; font-size: .93rem; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.kv .ur { margin-inline-start: .4rem; }
+.cust { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .8rem; margin-top: .6rem; }
+.cust fieldset { padding: .4rem .7rem .6rem; gap: .1rem; }
+.cust .chk { margin: .2rem 0; font-size: .92rem !important; }
+.cust .ind { margin: 0 0 .4rem 1.6rem; }
+.cust input[type=text], .cust input[type=number] { width: 100%; }
 
 @media print {
   .top, footer, .controls, .modes { display: none !important; }

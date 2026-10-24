@@ -33,3 +33,9 @@ Prayer times are checked at the sun's altitude (Fajr/Isha angle, ±0.83° sunris
 using the NOAA solar-position algorithm for 7 cities and 6 dates (±0.12°, i.e. well under a minute at these latitudes). The Hijri
 date uses the original program's rule (crescent assumed visible 1.08 days after the astronomical new moon), so it can differ by a day
 from local moon-sighting announcements.
+
+## Calculation methods, Asr and Location
+
+- **Options → Calculation method**: MWL, ISNA, Egypt, Makkah (Umm al-Qura), Karachi (UIS), JTR KHI, Tehran, Jafari, France, Russia, Singapore, or **Custom** (all fields: Fajr/Isha angles or Isha interval, Maghrib sun angle, Ishraq/Asr Makruh altitudes). Several angles separated by commas give one column each (Fajr15, Fajr18…).
+- **Asr** is always shown twice: 1× (Shafi‘i, Maliki, Hanbali) and 2× (Hanafi).
+- **Location**: search and pick a city from the list; its coordinates, time zone and DST rule fill the form at the right, where they can be edited and saved as your own place. A geolocation button is also provided.

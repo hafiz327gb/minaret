@@ -122,95 +122,119 @@
 
 <!-- ======================================================== LOCATION -->
 <section id="tab-location" class="panel">
-  <div class="cards">
-    <article class="card wide">
-      <h2>Current location <span class="ur">موجودہ مقام</span></h2>
-      <input type="search" id="locSearch" placeholder="Search the gazetteer (e.g. Karachi, Makkah, London)…" aria-label="Search places">
-      <select id="locList" size="9" aria-label="Places"></select>
-      <p class="hint"><span id="locCount"></span> places. Pick one to use it everywhere in the app.</p>
+  <div class="locgrid">
+    <article class="card gaz">
+      <h2>Gazetteer <span class="ur">مقامات کی فہرست</span></h2>
+      <input type="search" id="locSearch" placeholder="Search city… / شہر کا نام لکھیں" aria-label="Search places" autocomplete="off">
+      <select id="locList" size="12" aria-label="Places"></select>
+      <p class="hint"><span id="locCount"></span> places · pick one to use it and see its details at right.
+        <span class="ur">شہر چنتے ہی اس کی تفصیل دائیں طرف آ جائے گی۔</span></p>
     </article>
 
-    <article class="card">
-      <h2>Custom location <span class="ur">اپنا مقام</span></h2>
+    <article class="card coords">
+      <h2>Manual coordinates <span class="ur">مینول کوآرڈینیٹس</span></h2>
       <form id="locForm" autocomplete="off">
-        <label>Name <input id="cName" required maxlength="29"></label>
-        <div class="row">
-          <label>Latitude ° <input id="cLatD" type="number" min="0" max="90" required></label>
-          <label>′ <input id="cLatM" type="number" min="0" max="59" value="0" required></label>
-          <label>Hemisphere <select id="cLatS"><option value="0">N</option><option value="1">S</option></select></label>
-        </div>
-        <div class="row">
-          <label>Longitude ° <input id="cLonD" type="number" min="0" max="180" required></label>
-          <label>′ <input id="cLonM" type="number" min="0" max="59" value="0" required></label>
-          <label>&nbsp; <select id="cLonW"><option value="0">E</option><option value="1">W</option></select></label>
-        </div>
-        <div class="row">
-          <label>Zone: GMT <select id="cZoneNeg"><option value="0">+</option><option value="1">−</option></select></label>
-          <label>h <input id="cZoneH" type="number" min="0" max="14" value="0" required></label>
-          <label>m <input id="cZoneM" type="number" min="0" max="59" value="0" required></label>
-        </div>
-        <label class="chk"><input id="cDst" type="checkbox"> Observes daylight saving time</label>
+        <div class="grp"><span class="lt">Name <span class="ur">نام</span></span>
+          <input id="cName" required maxlength="29" aria-label="Name"></div>
+        <div class="grp"><span class="lt">Latitude <span class="ur">عرض البلد</span></span>
+          <div class="row">
+            <input id="cLatD" type="number" min="0" max="89" required placeholder="degrees °" aria-label="Latitude degrees">
+            <input id="cLatM" type="number" min="0" max="59" value="0" required placeholder="minutes ′" aria-label="Latitude minutes">
+            <select id="cLatS" aria-label="North or south"><option value="0">N</option><option value="1">S</option></select>
+          </div></div>
+        <div class="grp"><span class="lt">Longitude <span class="ur">طول البلد</span></span>
+          <div class="row">
+            <input id="cLonD" type="number" min="0" max="180" required placeholder="degrees °" aria-label="Longitude degrees">
+            <input id="cLonM" type="number" min="0" max="59" value="0" required placeholder="minutes ′" aria-label="Longitude minutes">
+            <select id="cLonW" aria-label="East or west"><option value="0">E</option><option value="1">W</option></select>
+          </div></div>
+        <div class="grp"><span class="lt">Time zone, GMT <span class="ur">ٹائم زون</span></span>
+          <div class="row">
+            <select id="cZoneNeg" aria-label="Plus or minus"><option value="0">+</option><option value="1">−</option></select>
+            <input id="cZoneH" type="number" min="0" max="14" value="0" required placeholder="hours" aria-label="Zone hours">
+            <input id="cZoneM" type="number" min="0" max="59" value="0" required placeholder="minutes" aria-label="Zone minutes">
+          </div></div>
+        <label class="chk"><input id="cDst" type="checkbox"> Daylight saving time <span class="ur">ڈے لائٹ سیونگ</span></label>
         <div id="cDstBox" class="dst" hidden>
-          <fieldset><legend>Starts</legend>
-            <select id="cDsNum"></select> <select id="cDsDow"></select> of <select id="cDsMon"></select>
-          </fieldset>
-          <fieldset><legend>Ends</legend>
-            <select id="cDeNum"></select> <select id="cDeDow"></select> of <select id="cDeMon"></select>
-          </fieldset>
+          <div class="rule"><b>Starts</b>
+            <select id="cDsNum" aria-label="Start: which"></select>
+            <select id="cDsDow" aria-label="Start: weekday"></select>
+            <input id="cDsDate" type="number" min="1" max="31" value="1" hidden aria-label="Start: day of month">
+            <span>of</span><select id="cDsMon" aria-label="Start month"></select></div>
+          <div class="rule"><b>Ends</b>
+            <select id="cDeNum" aria-label="End: which"></select>
+            <select id="cDeDow" aria-label="End: weekday"></select>
+            <input id="cDeDate" type="number" min="1" max="31" value="1" hidden aria-label="End: day of month">
+            <span>of</span><select id="cDeMon" aria-label="End month"></select></div>
+          <p class="hint">The last day of daylight time is the day before the end date.</p>
         </div>
-        <div class="btns"><button class="primary" type="submit">Use this location</button></div>
+        <p id="locErr" class="err" role="alert"></p>
+        <div class="btns">
+          <button class="primary" type="submit">Use this location <span class="ur">یہ مقام استعمال کریں</span></button>
+          <button type="button" id="locDel" hidden>Remove <span class="ur">حذف</span></button>
+        </div>
       </form>
     </article>
 
-    <article class="card">
-      <h2>Find me <span class="ur">میرا مقام</span></h2>
-      <p class="hint">Uses your device's GPS to fill latitude/longitude. Nothing is sent anywhere.</p>
-      <button id="geoBtn" type="button" class="primary">Use my current position</button>
+    <article class="card geo">
+      <h2>Current position <span class="ur">موجودہ مقام</span></h2>
+      <button id="geoBtn" type="button" class="primary">Use my current location <span class="ur">میرا موجودہ مقام</span></button>
       <p id="geoOut" class="result"></p>
+      <p class="hint">Uses your device's GPS; nothing is sent anywhere.</p>
     </article>
   </div>
 </section>
 
 <!-- ======================================================== OPTIONS -->
 <section id="tab-options" class="panel">
-  <form id="optForm" class="cards" autocomplete="off">
-    <article class="card">
-      <h2>Fajr <span class="ur">فجر</span></h2>
-      <label class="chk"><input type="radio" name="fajrBy" value="1"> By sun's depression below horizon</label>
-      <label class="ind">Angle(s) in degrees <input id="oFajrDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18" autocomplete="off"></label>
-      <p class="hint ind">Give one angle, or several separated by commas (e.g. <b>15, 18</b>). Each angle gets its own column, labelled Fajr15, Fajr18…</p>
-      <label class="chk"><input type="radio" name="fajrBy" value="0"> By fixed interval before sunrise</label>
-      <label class="ind">Minutes <input id="oFajrInt" type="number" min="20" max="120" step="1"></label>
+  <form id="optForm" class="optgrid" autocomplete="off">
+    <article class="card method">
+      <h2>Calculation method <span class="ur">طریقۂ حساب</span></h2>
+      <select id="oMethod" aria-label="Calculation method"></select>
+      <dl id="methodInfo" class="kv"></dl>
+
+      <div id="customBox" hidden>
+        <div class="cust">
+          <fieldset><legend>Fajr <span class="ur">فجر</span></legend>
+            <label class="chk"><input type="radio" name="fajrBy" value="1"> By angle(s) below horizon</label>
+            <label class="ind">Degrees <input id="oFajrDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18"></label>
+            <label class="chk"><input type="radio" name="fajrBy" value="0"> Fixed minutes before sunrise</label>
+            <label class="ind">Minutes <input id="oFajrInt" type="number" min="20" max="120" step="1"></label>
+          </fieldset>
+          <fieldset><legend>Maghrib <span class="ur">مغرب</span></legend>
+            <label class="chk"><input type="radio" name="magBy" value="0"> At sunset</label>
+            <label class="chk"><input type="radio" name="magBy" value="1"> Sun below horizon by an angle</label>
+            <label class="ind">Degrees <input id="oMagDepr" type="number" min="0.1" max="8" step="0.1"></label>
+          </fieldset>
+          <fieldset><legend>Isha <span class="ur">عشاء</span></legend>
+            <label class="chk"><input type="radio" name="ishaBy" value="1"> By angle(s) below horizon</label>
+            <label class="ind">Degrees <input id="oIshaDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18"></label>
+            <label class="chk"><input type="radio" name="ishaBy" value="0"> Fixed minutes after Maghrib</label>
+            <label class="ind">Minutes <input id="oIshaInt" type="number" min="20" max="120" step="1"></label>
+            <label class="ind">In Ramadan (minutes; 0 = same) <input id="oIshaRam" type="number" min="0" max="180" step="1"></label>
+          </fieldset>
+        </div>
+      </div>
+      <p class="hint">Several angles separated by commas (e.g. <b>15, 18</b>) give one column each: Fajr15, Fajr18… ·
+        Asr is always shown twice, <b>1×</b> (Shafi‘i, Maliki, Hanbali) and <b>2×</b> (Hanafi).
+        <span class="ur">عصر کے دونوں اوقات (مثلِ اول و ثانی) ہمیشہ دکھائے جاتے ہیں۔</span></p>
     </article>
-    <article class="card">
-      <h2>Isha <span class="ur">عشاء</span></h2>
-      <label class="chk"><input type="radio" name="ishaBy" value="1"> By sun's depression below horizon</label>
-      <label class="ind">Angle(s) in degrees <input id="oIshaDepr" type="text" inputmode="decimal" placeholder="15  or  15, 18" autocomplete="off"></label>
-      <p class="hint ind">One angle, or several separated by commas (e.g. <b>15, 18</b>) – columns Isha15, Isha18…</p>
-      <label class="chk"><input type="radio" name="ishaBy" value="0"> By fixed interval after sunset</label>
-      <label class="ind">Minutes <input id="oIshaInt" type="number" min="20" max="120" step="1"></label>
-    </article>
-    <article class="card">
-      <h2>Asr <span class="ur">عصر</span></h2>
-      <label class="chk"><input type="radio" name="asrBy" value="0"> Shafi‘i, Maliki, Hanbali (shadow = 1 × object)</label>
-      <label class="chk"><input type="radio" name="asrBy" value="1"> Hanafi (shadow = 2 × object)</label>
-    </article>
+
     <article class="card">
       <h2>Ishraq &amp; Asr Makruh <span class="ur">اشراق اور عصر مکروہ</span></h2>
       <label class="ind">Ishraq: sun's altitude after sunrise (°)
         <input id="oIshraq" type="number" min="0.1" max="10" step="0.1"></label>
       <label class="ind">Asr Makruh: sun's altitude before sunset (°)
         <input id="oMakruh" type="number" min="0.1" max="10" step="0.1"></label>
-      <p class="hint">Defaults: 1.4° and 2.3°. The altitude is of the sun's centre above the true horizon.</p>
-    </article>
-    <article class="card">
+      <p class="hint">Defaults 1.4° and 2.3° (sun's centre above the true horizon).</p>
       <h2>Extra columns <span class="ur">اضافی کالم</span></h2>
       <label class="chk"><input id="oHijri" type="checkbox"> Hijri date (Gregorian-year schedules)</label>
       <label class="chk"><input id="oQibla" type="checkbox"> Time when shadow points to Qibla</label>
       <label class="chk"><input id="o24" type="checkbox"> 24-hour clock</label>
+      <p id="optErr" class="err" role="alert"></p>
+      <div class="btns"><button class="primary" type="submit">Save <span class="ur">محفوظ کریں</span></button><button type="button" id="oReset">Reset to defaults</button></div>
     </article>
-    <p id="optErr" class="err wide" role="alert"></p>
-    <div class="btns wide"><button class="primary" type="submit">Save</button><button type="button" id="oReset">Reset to defaults</button></div>
+
   </form>
 </section>
 
@@ -227,9 +251,10 @@
       <li><b>Shuruq</b> – sunrise (sun's centre 0.83° below the horizon).</li>
       <li><b>Ishraq</b> – begins when the sun has risen <b>1.4°</b> above the horizon after sunrise (adjustable in Options).</li>
       <li><b>Zuhr</b> – solar noon.</li>
-      <li><b>Asr</b> – afternoon: shadow equals the object (or twice, Hanafi) plus the noon shadow.</li>
+      <li><b>Asr 1×</b> and <b>Asr 2×</b> – afternoon: the shadow equals once (Shafi‘i, Maliki, Hanbali) or twice (Hanafi) the object's length, plus the noon shadow. Both are always shown.</li>
       <li><b>Asr Makruh</b> – begins when the sun is still <b>2.3°</b> above the horizon before sunset, and lasts till Maghrib (adjustable).</li>
-      <li><b>Maghrib</b> – sunset. <b>Isha</b> – night: sun below the horizon by the chosen angle (or fixed minutes after sunset).</li>
+      <li><b>Maghrib</b> – sunset (a few methods use the sun's angle below the horizon instead). <b>Isha</b> – night: sun below the horizon by the chosen angle, or fixed minutes after Maghrib (some methods use more minutes in Ramadan).</li>
+      <li><b>Calculation method</b> – Options lists the conventions used in various countries and institutions; choose <i>Custom</i> to set every angle and interval yourself.</li>
     </ul>
     <p>A <b>*</b> means that the event does not occur on that day at that latitude. Year 0 gives a <i>perpetual</i> schedule
     (average of a four-year cycle, valid for any year). Dates 1901–2200 A.D. are supported.</p>
