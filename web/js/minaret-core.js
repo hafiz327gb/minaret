@@ -224,7 +224,7 @@
       region: 'Africa, Syria, Lebanon, Malaysia', regionUr: 'افریقہ، شام، لبنان، ملائیشیا', fajr: 19.5, isha: 17.5 },
     { id: 'Makkah', abbr: 'Makkah', en: 'Umm al-Qura University, Makkah', ur: 'جامعہ ام القریٰ، مکہ مکرمہ',
       region: 'Arabian Peninsula', regionUr: 'جزیرہ نمائے عرب', fajr: 18.5, ishaInterval: 90, ishaRamadan: 120 },
-    { id: 'Karachi', abbr: 'Karachi', en: 'University of Islamic Sciences, Karachi', ur: 'جامعہ علومِ اسلامیہ، کراچی',
+    { id: 'Karachi', abbr: 'Karachi', en: 'University of Islamic Sciences, Karachi', ur: '',
       region: 'Pakistan, Afghanistan, Bangladesh, India', regionUr: 'پاکستان، افغانستان، بنگلہ دیش، بھارت', fajr: 18, isha: 18 },
     { id: 'JTR', abbr: 'JTR KHI', en: 'Jamia tur Rasheed, Karachi', ur: 'جامعۃ الرشید، کراچی',
       region: 'Pakistan', regionUr: 'پاکستان', fajr: 15, isha: 15 },

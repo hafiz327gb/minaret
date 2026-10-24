@@ -530,7 +530,7 @@
   function methodSummary(st, id) {
     var m = M.methodById(id), rows = [];
     function kv(k, ku, v) { rows.push('<dt>' + k + ' <span class="ur">' + ku + '</span></dt><dd>' + v + '</dd>'); }
-    if (m) { kv('Method', 'طریقہ', esc(m.en) + ' <span class="ur">' + m.ur + '</span>'); kv('Region', 'علاقہ', esc(m.region) + ' <span class="ur">' + m.regionUr + '</span>'); }
+    if (m) { kv('Method', 'طریقہ', esc(m.en) + (m.ur ? ' <span class="ur">' + m.ur + '</span>' : '')); kv('Region', 'علاقہ', esc(m.region) + ' <span class="ur">' + m.regionUr + '</span>'); }
     kv('Fajr', 'فجر', st.fajrByDepr ? st.fajrAngles.map(fmtDeg).join(', ') + ' below horizon' : st.fajrInterval + ' min before sunrise');
     kv('Maghrib', 'مغرب', st.maghribDepr > 0 ? 'sun ' + fmtDeg(st.maghribDepr) + ' below horizon' : 'at sunset');
     kv('Isha', 'عشاء', st.ishaByDepr ? st.ishaAngles.map(fmtDeg).join(', ') + ' below horizon'
