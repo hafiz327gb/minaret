@@ -150,6 +150,7 @@
     return h + '</tbody></table></div>';
   }
 
+  var RAM_NOTE = 'احتیاط اس میں ہے کہ انتہائے سحرکے وقت کھانا پینا بند کر دیا جائے اور نماز اذانِ فجرکے وقت کے بعد پڑھیں۔ نیز انتہائے سحر اور وقتِ افطار میں احتیاطی وقت کو ملحوظ رکھا گیا ہے۔';
   function validYear(v, lo, hi, allowZero) {
     var y = Math.round(+v);
     if (allowZero && y === 0) return 0;
@@ -197,6 +198,21 @@
           qibla: st.addQiblaTime, pageBreak: true, isToday: function (r) { return yy === today.y && i + 1 === today.m && r.day === today.d; }
         });
       });
+    } else if (pMode === 'ramazan') {
+      var rs = +document.querySelector('input[name=ramOpt]:checked').value, rn = rs === 8 ? 30 : 29;   // both end on 9 March 2026
+      // Sehri end = Fajr 18° − 2 min, Fajr azan = Fajr 15°, Iftar = sunset + 2 min (fixed, whatever the options say)
+      var rst = Object.assign({}, st, { fajrByDepr: 1, fajrAngles: [18, 15], fajrDepr: 18, maghribDepr: 0, addHijriDate: 0, addQiblaTime: 0 });
+      var rmo = { 2: M.monthSchedule(2, 2026, loc, rst).rows, 3: M.monthSchedule(3, 2026, loc, rst).rows };
+      html = '<div class="head"><h2>Ramazan 1447 H — Sehri &amp; Iftar timetable <span class="ur">سحر و افطار</span></h2><p class="meta">' + locMeta(loc) + '</p></div>' +
+        '<div class="tblwrap"><table class="sch"><caption>Ramazan 1447 H · ' + rs + ' Feb – 9 Mar 2026</caption><thead><tr><th>Date<small>Feb–Mar 2026</small></th><th>Ramazan<small>1447 H</small></th>' +
+        '<th>انتہائے سحر<small>Fajr18 − 2 min</small></th><th>اذانِ فجر<small>Fajr15</small></th><th>وقتِ افطار<small>Sunset + 2 min</small></th></tr></thead><tbody>';
+      for (var ri = 0; ri < rn; ri++) {
+        var gd = rs + ri, gm = gd > 28 ? 3 : 2; if (gm === 3) gd -= 28;
+        var rr = rmo[gm][gd - 1];
+        html += '<tr' + (rr.dow === 6 ? ' class="fri"' : '') + '><td>' + gd + ' ' + M.MONTH[gm - 1].slice(0, 3) + ' <span class="dn">' + dayName(rr.dow).slice(0, 3) + '</span></td><td>' + (ri + 1) + '</td>' +
+          '<td>' + T(rr.fajrs[0] - 2 / 60) + '</td><td>' + T(rr.fajrs[1]) + '</td><td>' + T(rr.maghrib + 2 / 60) + '</td></tr>';
+      }
+      html += '</tbody></table></div><p class="ur ramnote" dir="rtl">' + RAM_NOTE + '</p>';
     } else if (pMode === 'range') {
       var a = parseDate($('pFrom').value), b = parseDate($('pTo').value);
       function bad(x) { return !x || x.y < 1901 || x.y > 2200 || !validGregorian(x.y, x.m, x.d); }
@@ -243,6 +259,7 @@
   }
   document.querySelectorAll('#prayerModes button').forEach(function (b) { b.addEventListener('click', function () { setPrayerMode(b.dataset.mode); }); });
   $('prayerForm').addEventListener('submit', function (e) { e.preventDefault(); renderPrayer(); });
+  document.querySelectorAll('input[name=ramOpt]').forEach(function (r) { r.addEventListener('change', renderPrayer); });
   ['pDate', 'pMonth', 'pYear', 'pHMonth', 'pHYear', 'pFrom', 'pTo'].forEach(function (id) { $(id).addEventListener('change', renderPrayer); });
 
   function tableText(sep) {
@@ -278,6 +295,7 @@
     if (loc.name && loc.name !== 'My location') head.unshift(['Location', loc.name]);
     else t = t.split('My location — ').join('');      // the table captions repeat the name too
     var hdr = head.map(function (r) { return q(r[0]) + ',' + q(r[1]); }).join('\n') + '\n\n';
+    if (pMode === 'ramazan') t += '\n' + q(RAM_NOTE) + '\n';
     download('minaret-prayer-times.csv', hdr + (t || $('prayerOut').innerText), 'text/csv;charset=utf-8');
   });
   $('pCopy').addEventListener('click', function () {
