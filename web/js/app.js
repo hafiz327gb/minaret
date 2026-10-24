@@ -701,6 +701,24 @@
     save('settings', settings); fillOptions(); renderCurrent();
   });
 
+  // ---- tables that fit the page scroll with it; wider ones scroll inside their own box
+  function fitTables() {
+    var top = document.querySelector('.top');
+    document.documentElement.style.setProperty('--topH', (top ? top.offsetHeight : 0) + 'px');
+    var wraps = document.querySelectorAll('.tblwrap');
+    wraps.forEach(function (w) { w.classList.remove('fit', 'wide'); });
+    wraps.forEach(function (w) {
+      var t = w.querySelector('table');
+      if (!t || !w.offsetWidth) return;
+      w.classList.add(t.getBoundingClientRect().width > w.clientWidth + 1 ? 'wide' : 'fit');
+    });
+  }
+  var fitQueued = false;
+  function queueFit() { if (fitQueued) return; fitQueued = true; requestAnimationFrame(function () { fitQueued = false; fitTables(); }); }
+  new MutationObserver(queueFit).observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('resize', queueFit);
+  tabs.forEach(function (b) { b.addEventListener('click', queueFit); });
+
   // ============================================================== init
   function renderCurrent() { if (!loc) return; renderPrayer(); renderQibla(); }
 

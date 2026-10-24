@@ -57,12 +57,12 @@ button:hover { filter: brightness(.96); }
 .out .head { margin: 0 0 .6rem; }
 .out h2 { margin: 0 0 .2rem; font-size: 1.1rem; }
 .out .meta { margin: 0 0 .8rem; color: var(--muted); font-size: .9rem; }
-.tblwrap { overflow: auto; max-height: calc(100vh - 8.5rem); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 1rem; }
+.tblwrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 1rem; }
 table.sch { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; min-width: 40rem; }
 table.sch caption { text-align: start; font-weight: 600; padding: .6rem .8rem .2rem; }
-table.sch th, table.sch td { padding: .35rem .6rem; text-align: center; white-space: nowrap; }
+table.sch th, table.sch td { padding: .3rem .4rem; text-align: center; white-space: nowrap; }
 table.sch thead th { position: sticky; top: 0; z-index: 2; background: var(--hi2); font-weight: 600; border-bottom: 1px solid var(--line); line-height: 1.25; }
-table.sch thead th small { display: block; font-weight: 400; color: var(--muted); font-size: .72rem; }
+table.sch thead th small { display: block; white-space: normal; line-height: 1.2; font-weight: 400; color: var(--muted); font-size: .72rem; }
 table.sch tbody tr { background: var(--surface); }
 table.sch tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg) 55%, var(--surface)); }   /* opaque: scrolled cells must not show through the sticky header / first column */
 table.sch tbody tr.today { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--hi); }
@@ -185,3 +185,9 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .controls label.rad small { color: var(--muted); margin-inline-start: 1.5rem; }
 .controls label.rad input { margin-inline-end: .4rem; }
 .ramnote { font-size: 1.05rem; line-height: 2.1; margin: .8rem 0; opacity: 1; text-align: center; }
+
+/* Tables that fit the page scroll with the page (header sticks under the top bar, like any normal page);
+   only tables wider than the screen get their own horizontal scroll box (see fitTables in app.js). */
+.tblwrap.fit { overflow: clip; }
+.tblwrap.fit table.sch thead th { top: var(--topH, 0px); }
+.tblwrap.wide { overflow: auto; max-height: calc(100vh - var(--topH, 6rem) - 1rem); }
