@@ -26,7 +26,7 @@ body { margin: 0; background: var(--bg); color: var(--ink);
   /* keep Nastaliq words whole: no fake bold/italic, no letter-spacing, ligatures and joining left to the font */
   font-synthesis: none; letter-spacing: 0; text-rendering: optimizeLegibility; font-variant-ligatures: common-ligatures contextual; font-kerning: normal; }
 .ur { font-family: "Mehr Nastaliq Web", "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Alvi Nastaleeq", "Segoe UI", serif;
-  font-size: 1em; line-height: 1.55; opacity: .9; margin-inline-start: .35em; word-break: keep-all; overflow-wrap: normal; hyphens: none; }
+  font-size: 1.25em; line-height: 1.35; opacity: 1; margin-inline-start: .35em; word-break: keep-all; overflow-wrap: normal; hyphens: none; }
 
 .top { background: var(--brand); color: var(--brand-ink); padding: .6rem 1rem 0; position: sticky; top: 0; z-index: 5; }
 .brand { display: flex; gap: .6rem; align-items: center; padding-bottom: .4rem; }
@@ -182,8 +182,11 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .offrow button { padding: .15rem 0; line-height: 1.2; }
 .offrow input { width: 100%; text-align: center; padding: .2rem .1rem; }
 .method { grid-area: method; } .offs { grid-area: offs; } .misc { grid-area: misc; }
-.mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 40rem) { .mgrid { grid-template-columns: 1fr; } }
+.mgrid { display: grid; grid-template-columns: 1.2fr 1.2fr .9fr; gap: 1rem; align-items: start; }
+.mact { display: flex; flex-direction: column; justify-content: flex-end; gap: .4rem; min-height: 100%; }
+.mact .btns { flex-direction: column; align-items: stretch; }
+@media (max-width: 52rem) { .mgrid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 34rem) { .mgrid { grid-template-columns: 1fr; } }
 .offs h2 { margin-bottom: .4rem; }
 .offrow > span { line-height: 1.7; }
 .offrow button, .offrow input { height: 1.7rem; min-height: 0; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
@@ -202,3 +205,6 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .tblwrap.fit table.sch thead th { top: var(--topH, 0px); }
 .tblwrap.wide { overflow: auto; max-height: calc(100vh - var(--topH, 6rem) - 1rem); }
 .ramnote mark { background: none; color: var(--brand); font-weight: inherit; padding: 0; }
+/* Urdu is larger now; keep compact controls from growing taller because of it (the glyphs may extend past the line box, nothing is clipped) */
+.offrow .ur, #tabs .ur, button .ur, .kv .ur, .coords .ur, .lt .ur, label .ur { line-height: 1.1; }
+.offrow > span { line-height: 1.2; }

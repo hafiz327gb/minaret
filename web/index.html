@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f5c4d">
 <title>Minaret – Prayer Times, Qibla &amp; Hijri Calendar</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
 <header class="top">
@@ -253,9 +253,11 @@
           <label class="chk"><input id="oQibla" type="checkbox"> Time when shadow points to Qibla</label>
           <label class="chk"><input id="o24" type="checkbox"> 24-hour clock</label>
         </div>
+        <div class="mact">
+          <p id="optErr" class="err" role="alert"></p>
+          <div class="btns"><button class="primary" type="submit">Save <span class="ur">محفوظ کریں</span></button><button type="button" id="oReset">Reset to defaults</button></div>
+        </div>
       </div>
-      <p id="optErr" class="err" role="alert"></p>
-      <div class="btns"><button class="primary" type="submit">Save <span class="ur">محفوظ کریں</span></button><button type="button" id="oReset">Reset to defaults</button></div>
     </article>
 
   </form>
@@ -294,9 +296,9 @@
   <span>Based on Minaret © 1987–1998 Kamal Abdali · Web version</span>
 </footer>
 
-<script src="data/gazetteer.js?v=8"></script>
-<script src="js/minaret-core.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="data/gazetteer.js?v=9"></script>
+<script src="js/minaret-core.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
 </body>
 </html>
