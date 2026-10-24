@@ -414,7 +414,7 @@
   function readLocForm() {
     var err = $('locErr');
     function n(id, lo, hi) { var v = Number($(id).value); return (isFinite(v) && $(id).value !== '' && v >= lo && v <= hi && v === Math.round(v)) ? v : null; }
-    var name = $('cName').value.trim().slice(0, 29);
+    var name = $('cName').value.trim().slice(0, 60);
     var latD = n('cLatD', 0, 89), latM = n('cLatM', 0, 59), lonD = n('cLonD', 0, 180), lonM = n('cLonM', 0, 59);
     var zH = n('cZoneH', 0, 14), zM = n('cZoneM', 0, 59);
     if (!name) { err.textContent = 'Please give the place a name.'; return null; }
@@ -437,7 +437,7 @@
   function useFormPlace(p) {
     var gz = places.filter(function (x) { return x.name === p.name && !isCustom(x); })[0];
     if (gz && samePlace(stripDerived(gz), p)) { setLocation(gz); fillLocForm(gz); renderPlaceList(); return; }
-    if (gz) p.name = (p.name.slice(0, 21) + ' (mine)').slice(0, 29);        // do not shadow a gazetteer name
+    if (gz) p.name = (p.name.slice(0, 52) + ' (mine)').slice(0, 60);        // do not shadow a gazetteer name
     customPlaces = customPlaces.filter(function (c) { return c.name !== p.name; }).concat([p]);
     save('custom', customPlaces); rebuildPlaces(); setLocation(p); fillLocForm(p); renderPlaceList();
   }
