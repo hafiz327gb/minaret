@@ -243,7 +243,13 @@
   $('pPrint').addEventListener('click', function () { window.print(); });
   $('pCsv').addEventListener('click', function () {
     var t = tableText(',');
-    download('minaret-prayer-times.csv', t || $('prayerOut').innerText, 'text/csv;charset=utf-8');
+    function q(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+    // location block once at the top; the placeholder name of the geolocation button is not written
+    var head = [['Latitude', fmtLat(loc)], ['Longitude', fmtLon(loc)], ['Time zone', 'GMT' + fmtZone(loc)]];
+    if (loc.name && loc.name !== 'My location') head.unshift(['Location', loc.name]);
+    else t = t.split('My location — ').join('');      // the table captions repeat the name too
+    var hdr = head.map(function (r) { return q(r[0]) + ',' + q(r[1]); }).join('\n') + '\n\n';
+    download('minaret-prayer-times.csv', hdr + (t || $('prayerOut').innerText), 'text/csv;charset=utf-8');
   });
   $('pCopy').addEventListener('click', function () {
     var t = tableText('\t'), b = $('pCopy');
