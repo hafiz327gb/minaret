@@ -17,7 +17,7 @@
   // --------------------------------------------------------------- state
   var customPlaces = load('custom', []);
   var places = [];                      // gazetteer + custom, sorted by name
-  var DEFAULT_METHOD = 'JTR';          // Jamia tur Rasheed, Karachi (15 / 15), the original program's defaults
+  var DEFAULT_METHOD = 'Default';      // Fajr 18° + 15°, Isha 15° + 18°
   var saved = load('settings', null);
   var settings = Object.assign(M.defaultSettings(), { use24: 0 }, saved || {});
   function ensureAngles(s) {
@@ -502,7 +502,7 @@
 
   // ======================================================= OPTIONS TAB
   function methodsHtml() {
-    return M.METHODS.map(function (m) { return '<option value="' + m.id + '">' + esc(m.en) + ' (' + esc(m.abbr) + ')</option>'; }).join('') +
+    return M.METHODS.map(function (m) { return '<option value="' + m.id + '">' + esc(m.en) + (m.en === m.abbr ? '' : ' (' + esc(m.abbr) + ')') + '</option>'; }).join('') +
       '<option value="custom">Custom — set every angle yourself / اپنی مرضی کا</option>';
   }
   function fmtDeg(v) { return v + '°'; }

@@ -214,6 +214,8 @@
    * that many degrees below the horizon instead of at sunset.  `abbr` is the short label.
    */
   var METHODS = [
+    { id: 'Default', abbr: 'Default', en: 'Default', ur: 'ڈیفالٹ',
+      region: 'Fajr 18° and 15°, Isha 15° and 18° (both shown)', regionUr: 'فجر اور عشاء کے دونوں زاویے', fajrs: [18, 15], ishas: [15, 18] },
     { id: 'MWL', abbr: 'MWL', en: 'Muslim World League', ur: 'رابطۂ عالمِ اسلامی',
       region: 'Europe, Far East, parts of US', regionUr: 'یورپ، مشرقِ بعید، امریکہ کے کچھ حصے', fajr: 18, isha: 17 },
     { id: 'ISNA', abbr: 'ISNA', en: 'Islamic Society of North America', ur: 'اسلامک سوسائٹی آف نارتھ امریکہ',
@@ -247,22 +249,25 @@
   function applyMethod(st, id) {
     var m = methodById(id);
     if (!m) return st;
-    st.fajrByDepr = 1; st.fajrAngles = [m.fajr]; st.fajrDepr = m.fajr;
+    var fa = m.fajrs || [m.fajr];
+    st.fajrByDepr = 1; st.fajrAngles = fa.slice(); st.fajrDepr = fa[0];
     if (m.ishaInterval) {
       st.ishaByDepr = 0; st.ishaInterval = m.ishaInterval; st.ishaRamadanInterval = m.ishaRamadan || 0;
     } else {
-      st.ishaByDepr = 1; st.ishaAngles = [m.isha]; st.ishaDepr = m.isha; st.ishaRamadanInterval = 0;
+      var ia = m.ishas || [m.isha];
+      st.ishaByDepr = 1; st.ishaAngles = ia.slice(); st.ishaDepr = ia[0]; st.ishaRamadanInterval = 0;
     }
     st.maghribDepr = m.maghrib || 0;
     return st;
   }
 
+  function sameList(a, b) { return a.length === b.length && a.every(function (v, i) { return v === b[i]; }); }
   function methodMatches(st, m) {
     var fa = angleList(st, 'fajr'), ia = angleList(st, 'isha');
-    if (!st.fajrByDepr || fa.length !== 1 || fa[0] !== m.fajr) return false;
+    if (!st.fajrByDepr || !sameList(fa, m.fajrs || [m.fajr])) return false;
     if ((st.maghribDepr || 0) !== (m.maghrib || 0)) return false;
     if (m.ishaInterval) return !st.ishaByDepr && st.ishaInterval === m.ishaInterval && (st.ishaRamadanInterval || 0) === (m.ishaRamadan || 0);
-    return !!st.ishaByDepr && ia.length === 1 && ia[0] === m.isha;
+    return !!st.ishaByDepr && sameList(ia, m.ishas || [m.isha]);
   }
 
   /**

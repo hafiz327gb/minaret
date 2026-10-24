@@ -143,7 +143,14 @@ console.log('sun-altitude checks:', altChecked);
 
 // ---- 1c. calculation methods ----------------------------------------------
 {
-  ok(M.METHODS.length === 11, 'eleven methods');
+  ok(M.METHODS.length === 12 && M.METHODS[0].id === 'Default', 'Default + eleven methods, Default first');
+  {
+    const d = M.applyMethod(Object.assign({}, st), 'Default');
+    ok(d.fajrAngles.join() === '18,15' && d.ishaAngles.join() === '15,18' && M.detectMethod(d) === 'Default', 'Default method angles and detection');
+    const r = M.daySchedule(22, 10, 2026, findLoc('Karachi'), d).times;
+    ok(r.fajrs.length === 2 && r.ishas.length === 2 && r.fajrs[0] < r.fajrs[1] === true, 'Default gives Fajr18 before Fajr15 columns');
+    ok(M.detectMethod(Object.assign({}, d, { fajrAngles: [15, 18] })) === 'custom', 'order matters');
+  }
   const expect = { MWL: [18, 17], ISNA: [15, 15], Egypt: [19.5, 17.5], Karachi: [18, 18], JTR: [15, 15], Tehran: [17.7, 14], Jafari: [16, 14], France: [12, 12], Russia: [16, 15], Singapore: [20, 18] };
   const loc = findLoc('Karachi'), noDst = Object.assign({}, loc, { dst: 0 });
   for (const id of Object.keys(expect)) {

@@ -172,7 +172,8 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 @media (max-width: 40rem) { .mgrid { grid-template-columns: 1fr; } }
 .offs h2 { margin-bottom: .4rem; }
 .offrow > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.offrow button, .offrow input { height: 1.6rem; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
+.offrow button, .offrow input { height: 1.7rem; min-height: 0; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
 .offrow { margin-bottom: .12rem; }
 .misc .ind { margin-left: 0; }
 .misc h2 { font-size: 1rem; }
+@media (max-width: 62rem) { .offrow button, .offrow input { height: 2.2rem; } }
