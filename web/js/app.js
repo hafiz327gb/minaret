@@ -93,17 +93,23 @@
   var pMode = 'day';
   /** The table columns for the current settings (several Fajr/Isha angles -> several columns). */
   function columns() {
-    var st = settings, cols = [];
+    var st = settings, cols = [], offs = st.offsets || {};
+    function withOff(v, m) { return (m && isFinite(v) && v >= 0 && v < 24) ? v + m / 60 : v; }
+    function offTag(m) { return m ? ' · ' + (m > 0 ? '+' : '−') + Math.abs(m) + 'm' : ''; }
     function angleCols(which, en, ur, sub) {
       var list = st[which + 'ByDepr'] ? M.angleList(st, which) : [null], multi = list.length > 1;
       list.forEach(function (a, i) {
+        var m = +offs[multi ? which + ':' + a : which] || 0;
         cols.push({
-          id: which + i, en: en + (multi ? a : ''), ur: ur, sub: sub + (multi ? ' · ' + a + '°' : ''),
-          get: function (r) { return r[which === 'fajr' ? 'fajrs' : 'ishas'][i]; }
+          id: which + i, en: en + (multi ? a : ''), ur: ur, sub: sub + (multi ? ' · ' + a + '°' : '') + offTag(m),
+          get: function (r) { return withOff(r[which === 'fajr' ? 'fajrs' : 'ishas'][i], m); }
         });
       });
     }
-    function one(key, en, ur, sub, extra) { cols.push({ id: key, en: en, ur: ur, sub: sub, extra: extra, get: function (r) { return r[key]; } }); }
+    function one(key, en, ur, sub, extra) {
+      var m = +offs[key] || 0;
+      cols.push({ id: key, en: en, ur: ur, sub: sub + offTag(m), extra: extra, get: function (r) { return withOff(r[key], m); } });
+    }
     angleCols('fajr', 'Fajr', 'فجر', 'Dawn');
     one('shuruq', 'Shuruq', 'طلوع', 'Sunrise');
     one('ishraq', 'Ishraq', 'اشراق', '+' + st.ishraqAlt + '°', 1);
@@ -517,13 +523,67 @@
     $('oIshaRam').value = s.ishaRamadanInterval || 0;
     $('oMagDepr').value = s.maghribDepr > 0 ? s.maghribDepr : 4;
   }
+  // ---- minutes added to / subtracted from each prayer (shown for every Fajr / Isha angle too)
+  var offDraft = {};
+  var OFF_FIXED = [['shuruq', 'Shuruq', 'طلوع'], ['ishraq', 'Ishraq', 'اشراق'], ['zuhr', 'Zuhr', 'ظہر'], ['asr', 'Asr 1×', 'عصر مثلِ اول'],
+    ['asr2', 'Asr 2×', 'عصر مثلِ ثانی'], ['asrMakruh', 'Asr Makruh', 'عصر مکروہ'], ['maghrib', 'Maghrib', 'مغرب']];
+  /** The settings the form currently describes (selected method, or the custom fields as typed so far). */
+  function formSettings() {
+    var id = $('oMethod').value, t = Object.assign({}, settings);
+    if (id !== 'custom') { M.applyMethod(t, id); return t; }
+    var fa = parseAngles($('oFajrDepr').value), ia = parseAngles($('oIshaDepr').value);
+    t.fajrByDepr = document.querySelector('input[name=fajrBy]:checked').value === '1' ? 1 : 0;
+    t.ishaByDepr = document.querySelector('input[name=ishaBy]:checked').value === '1' ? 1 : 0;
+    if (fa) t.fajrAngles = fa; if (ia) t.ishaAngles = ia;
+    return t;
+  }
+  function offRows(t) {
+    var rows = [];
+    function ang(which, en, ur) {
+      var list = t[which + 'ByDepr'] ? M.angleList(t, which) : [null], multi = list.length > 1;
+      list.forEach(function (a) { rows.push([multi ? which + ':' + a : which, en + (multi ? ' ' + a + '°' : ''), ur]); });
+    }
+    ang('fajr', 'Fajr', 'فجر');
+    OFF_FIXED.slice(0, 6).forEach(function (r) { rows.push(r); });
+    rows.push(OFF_FIXED[6]);
+    ang('isha', 'Isha', 'عشاء');
+    return rows;
+  }
+  var offSig = '';
+  function buildOffsets(force) {
+    var h = '', rows = offRows(formSettings()), sig = rows.map(function (r) { return r[0]; }).join('|');
+    if (sig === offSig && force !== true) return;        // keep the DOM (and focus) while the rows stay the same
+    offSig = sig;
+    rows.forEach(function (r) {
+      h += '<div class="offrow"><span>' + r[1] + ' <span class="ur">' + r[2] + '</span></span>' +
+        '<button type="button" data-k="' + r[0] + '" data-d="-1" aria-label="Subtract a minute from ' + r[1] + '">−</button>' +
+        '<input type="number" min="-120" max="120" step="1" data-k="' + r[0] + '" value="' + (offDraft[r[0]] || 0) + '" aria-label="Minutes to add to ' + r[1] + '">' +
+        '<button type="button" data-k="' + r[0] + '" data-d="1" aria-label="Add a minute to ' + r[1] + '">+</button></div>';
+    });
+    $('offList').innerHTML = h;
+  }
+  $('offList').addEventListener('input', function (e) {
+    var k = e.target.dataset.k; if (!k) return;
+    var v = e.target.value.trim() === '' ? 0 : Number(e.target.value); offDraft[k] = isFinite(v) ? v : 0;
+  });
+  $('offList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-k]'); if (!b) return;
+    var inp = $('offList').querySelector('input[data-k="' + b.dataset.k + '"]');
+    var v = Math.max(-120, Math.min(120, Math.round(Number(inp.value) || 0) + Number(b.dataset.d)));
+    inp.value = v; offDraft[b.dataset.k] = v;
+  });
+  $('customBox').addEventListener('input', function () { buildOffsets(); });
+  $('customBox').addEventListener('change', function () { buildOffsets(); });
+
   function fillOptions() {
     var s = settings;
+    offDraft = Object.assign({}, s.offsets || {});
     $('oMethod').value = s.method;
     fillCustom(s); showMethod(s.method, s);
     $('oIshraq').value = s.ishraqAlt; $('oMakruh').value = s.asrMakruhAlt;
     $('oHijri').checked = !!s.addHijriDate; $('oQibla').checked = !!s.addQiblaTime; $('o24').checked = !!s.use24;
     $('optErr').textContent = '';
+    buildOffsets(true);
   }
   /** Show the summary (presets) or the editable fields (custom). */
   function showMethod(id, st) {
@@ -535,6 +595,7 @@
     var id = $('oMethod').value, tmp = Object.assign({}, settings);
     if (id !== 'custom') { M.applyMethod(tmp, id); fillCustom(tmp); }      // so “Custom” starts from this method
     showMethod(id, tmp);
+    buildOffsets(true);
   });
 
   /** "15, 18" -> [15, 18]; null if empty, malformed, out of 6..24, or more than 4 values. */
@@ -579,12 +640,20 @@
       ensureAngles(s);
     }
     s.ishraqAlt = ish; s.asrMakruhAlt = mak;
+    var no = {}, bad = null;
+    offRows(s).forEach(function (r) {
+      var v = Number(offDraft[r[0]] || 0);
+      if (!isFinite(v) || v !== Math.round(v) || v < -120 || v > 120) bad = bad || r[1];
+      else if (v) no[r[0]] = v;
+    });
+    if (bad) return optFail('Minutes for ' + bad + ' must be a whole number between −120 and +120.');
+    s.offsets = no;
     s.addHijriDate = $('oHijri').checked ? 1 : 0; s.addQiblaTime = $('oQibla').checked ? 1 : 0; s.use24 = $('o24').checked ? 1 : 0;
     s.method = id;
     settings = s; save('settings', settings); fillOptions(); renderCurrent(); showTab('prayer');
   });
   $('oReset').addEventListener('click', function () {
-    settings = Object.assign(M.defaultSettings(), { use24: 0 }); ensureAngles(settings);
+    settings = Object.assign(M.defaultSettings(), { use24: 0, offsets: {} }); ensureAngles(settings);
     M.applyMethod(settings, DEFAULT_METHOD); settings.method = DEFAULT_METHOD;
     save('settings', settings); fillOptions(); renderCurrent();
   });

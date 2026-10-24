@@ -137,15 +137,15 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
 .geo .result { min-height: 0; font-size: .95rem; }
 
 /* ---- Options tab ---- */
-.optgrid { display: grid; gap: 1rem; align-items: start; grid-template-columns: minmax(0, 2.2fr) minmax(16rem, 1fr); }
-@media (max-width: 62rem) { .optgrid { grid-template-columns: 1fr; } }
+.optgrid { display: grid; gap: 1rem; align-items: start; grid-template-columns: minmax(0, 2.3fr) minmax(16rem, 1fr); grid-template-areas: "method offs" "misc offs"; }
+@media (max-width: 62rem) { .optgrid { grid-template-columns: 1fr; grid-template-areas: "method" "offs" "misc"; } }
 .optgrid .wide { grid-column: 1 / -1; }
 .optgrid .card { padding: .8rem 1rem; }
 #oMethod { width: 100%; }
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .9rem; margin: .7rem 0 .4rem; font-size: .93rem; }
 .kv dt { color: var(--muted); } .kv dd { margin: 0; }
 .kv .ur { margin-inline-start: .4rem; }
-.cust { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .8rem; margin-top: .6rem; }
+.cust { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .8rem; margin-top: .6rem; }
 .cust fieldset { padding: .4rem .7rem .6rem; gap: .1rem; }
 .cust .chk { margin: .2rem 0; font-size: .92rem !important; }
 .cust .ind { margin: 0 0 .4rem 1.6rem; }
@@ -163,3 +163,16 @@ legend { padding: 0 .3rem; color: var(--muted); font-size: .85rem; }
   table.sch tbody tr.today { outline: 0; background: transparent; }
   .month-break { break-after: page; }
 }
+
+.offrow { display: grid; grid-template-columns: 1fr 1.8rem 3.4rem 1.8rem; gap: .25rem; align-items: center; margin-bottom: .25rem; font-size: .9rem; }
+.offrow button { padding: .15rem 0; line-height: 1.2; }
+.offrow input { width: 100%; text-align: center; padding: .2rem .1rem; }
+.method { grid-area: method; } .offs { grid-area: offs; } .misc { grid-area: misc; }
+.mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 40rem) { .mgrid { grid-template-columns: 1fr; } }
+.offs h2 { margin-bottom: .4rem; }
+.offrow > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.offrow button, .offrow input { height: 1.8rem; box-sizing: border-box; }
+.offrow { margin-bottom: .2rem; }
+.misc .ind { margin-left: 0; }
+.misc h2 { font-size: 1rem; }
